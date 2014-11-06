@@ -1,0 +1,181 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{3DE4ED97-4BAB-48FB-B6AA-01E606DCF6EE}</ProjectGuid>
+    <RootNamespace>GetToTheInn</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>libnoise\include;libtcod\include;$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)build\</OutDir>
+    <TargetName>$(ProjectName)_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>libnoise\include;libtcod\include;$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)build\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DisableSpecificWarnings>4244;4018;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>libnoise\lib;libtcod\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libtcod-VS.lib;libnoise.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <DisableSpecificWarnings>4244;4018;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>libnoise\lib;libtcod\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libtcod-VS.lib;libnoise.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="animation.cpp" />
+    <ClCompile Include="context.cpp" />
+    <ClCompile Include="delay.cpp" />
+    <ClCompile Include="effects.cpp" />
+    <ClCompile Include="engine.cpp" />
+    <ClCompile Include="fov\fov.c" />
+    <ClCompile Include="geometry.cpp" />
+    <ClCompile Include="jsoncpp\json_reader.cpp" />
+    <ClCompile Include="jsoncpp\json_value.cpp" />
+    <ClCompile Include="jsoncpp\json_writer.cpp" />
+    <ClCompile Include="lighting.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="map.cpp" />
+    <ClCompile Include="object.cpp" />
+    <ClCompile Include="pathfinding.cpp" />
+    <ClCompile Include="player.cpp" />
+    <ClCompile Include="render.cpp" />
+    <ClCompile Include="sys\enumstr.cpp" />
+    <ClCompile Include="sys\event.cpp" />
+    <ClCompile Include="sys\eventqueue.cpp" />
+    <ClCompile Include="sys\gamedata.cpp" />
+    <ClCompile Include="sys\eof_parser.cpp" />
+    <ClCompile Include="sys\hash.c" />
+    <ClCompile Include="sys\listener.cpp" />
+    <ClCompile Include="sys\logger.cpp" />
+    <ClCompile Include="sys\token.cpp" />
+    <ClCompile Include="sys\thread.cpp" />
+    <ClCompile Include="sys\worker.cpp" />
+    <ClCompile Include="ui\uiframe.cpp" />
+    <ClCompile Include="ui\uilabel.cpp" />
+    <ClCompile Include="ui\uilayout.cpp" />
+    <ClCompile Include="ui\uimenu.cpp" />
+    <ClCompile Include="ui\uimenuitem.cpp" />
+    <ClCompile Include="ui\uipanel.cpp" />
+    <ClCompile Include="ui\uithread.cpp" />
+    <ClCompile Include="ui\uiwidget.cpp" />
+    <ClCompile Include="viewport.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="animation.h" />
+    <ClInclude Include="common.h" />
+    <ClInclude Include="context.h" />
+    <ClInclude Include="delay.h" />
+    <ClInclude Include="effects.h" />
+    <ClInclude Include="engine.h" />
+    <ClInclude Include="fov\fov.h" />
+    <ClInclude Include="geometry.h" />
+    <ClInclude Include="jsoncpp\autolink.h" />
+    <ClInclude Include="jsoncpp\config.h" />
+    <ClInclude Include="jsoncpp\features.h" />
+    <ClInclude Include="jsoncpp\forwards.h" />
+    <ClInclude Include="jsoncpp\json.h" />
+    <ClInclude Include="jsoncpp\json_batchallocator.h" />
+    <ClInclude Include="jsoncpp\reader.h" />
+    <ClInclude Include="jsoncpp\value.h" />
+    <ClInclude Include="jsoncpp\writer.h" />
+    <ClInclude Include="key.h" />
+    <ClInclude Include="lighting.h" />
+    <ClInclude Include="map.h" />
+    <ClInclude Include="mouse.h" />
+    <ClInclude Include="object.h" />
+    <ClInclude Include="pathfinding.h" />
+    <ClInclude Include="player.h" />
+    <ClInclude Include="render.h" />
+    <ClInclude Include="rnd.h" />
+    <ClInclude Include="sys\data_engine.h" />
+    <ClInclude Include="sys\enumstr.h" />
+    <ClInclude Include="sys\event.h" />
+    <ClInclude Include="sys\eventqueue.h" />
+    <ClInclude Include="sys\gamedata.h" />
+    <ClInclude Include="sys\eof_parser.h" />
+    <ClInclude Include="sys\hash.h" />
+    <ClInclude Include="sys\listener.h" />
+    <ClInclude Include="sys\logger.h" />
+    <ClInclude Include="sys\token.h" />
+    <ClInclude Include="sys\thread.h" />
+    <ClInclude Include="sys\thread_os.h" />
+    <ClInclude Include="sys\worker.h" />
+    <ClInclude Include="ui\ui.h" />
+    <ClInclude Include="ui\uiframe.h" />
+    <ClInclude Include="ui\uilabel.h" />
+    <ClInclude Include="ui\uilayout.h" />
+    <ClInclude Include="ui\uimenu.h" />
+    <ClInclude Include="ui\uimenuitem.h" />
+    <ClInclude Include="ui\uipanel.h" />
+    <ClInclude Include="ui\uithread.h" />
+    <ClInclude Include="ui\uiwidget.h" />
+    <ClInclude Include="util.h" />
+    <ClInclude Include="viewport.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="jsoncpp\json_internalarray.inl" />
+    <None Include="jsoncpp\json_internalmap.inl" />
+    <None Include="jsoncpp\json_valueiterator.inl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
