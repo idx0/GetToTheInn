@@ -1,0 +1,18 @@
+[version:1.0]
+[author:index_zero]
+[content:lights]
+[meta:this is a test.\n:\#\]_AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz 0123456789 \'\"\ns p a c e\tt e s t]
+[meta:]
+[:]{
+	id, value, value, color
+}
+# id 					range				intensity			color
+#																  func,	base,	mod,	param
+[player.light]
+{ l_player,				RRNG(14,18),		1.15,				(255,255,171) }
+[map.flora.lights]
+{ l_magic_tree,			RRNG(12,16),		RNG(0.8,1.2),		{ LERP,	sea,	neon,	RNDN() } }
+{ l_nightshade,			3,					RNG(1.0,1.25),		{ LERP,	navy,	azure,	RNDN() } }
+{ l_mystic_shrooms,		RRNG(2,3),			RNG(1.0,1.25),		{ LERP,	han,	purple,	RNDN() } }
+[map.props.lights]
+{ l_torch001,			RRNG(6,10),			RRNG(0.8,1.2),		-}
