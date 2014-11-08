@@ -8,7 +8,7 @@
 
 #include "sys/logger.h"
 
-#define FLORA
+//#define FLORA
 
 Dirt::Dirt(int x, int y) : Object(x, y, ' ', Color::black)
 {
@@ -40,14 +40,8 @@ Grass::Grass(const Point& p) : Object(p, ' ', Color::black)
 {
 	static int icons[4] = { ',', '`', '\'', '"' };
 
-	//litColor	= TCODColor::lerp(TCODColor::darkSepia, TCODColor::desaturatedGreen, Rnd::rndn());
-	
-
-	TCODColor fg = TCODColor::lerp(TCODColor::darkGreen, TCODColor::darkerSea, Rnd::rndn());
-	fg.scaleHSV(Rnd::betweenf(0.6f, 1.0f), Rnd::betweenf(0.6f, 1.0f));
-
-	m_fgColor = Color(fg);
-	m_bgColor = Color::lerp(Color(6, 12, 6), Color(0, 18, 12), Rnd::betweenf(0.3f, 0.6f));
+	m_fgColor = Color::lerp(Color(25, 31, 12), Color(25, 62, 12), Rnd::rndn());
+	m_bgColor = Color::lerp(Color(6, 6, 0), Color(0, 12, 0), Rnd::betweenf(0.3f, 0.6f));
 
 	m_icon		= icons[Rnd::between(0, 4)];
 
@@ -81,7 +75,8 @@ Wall::Wall(int x, int y) : Object(x, y, '#', Color::lerp(Color::grey, Color::azu
 
 FloraWall::FloraWall(const Point& p) : Object(p, '#', Color(121, 110, 64))
 {
-	m_bgColor = Color::lerp(Color(6, 12, 6), Color(0, 18, 12), Rnd::betweenf(0.3f, 0.6f));
+	m_fgColor = Color::lerp(Color(35, 41, 22), Color(59, 77, 22), Rnd::rndn());
+	m_bgColor = Color::lerp(Color(6, 6, 0), Color(0, 12, 0), Rnd::betweenf(0.3f, 0.6f));
 
 	m_mobilityModel.walkable = false;
 	m_mobilityModel.jumpable = false;

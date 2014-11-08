@@ -49,7 +49,7 @@ MobilityModel Object::mobilityModel() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-MagicTree::MagicTree(const Point& p) : Object(p, 231, Color::lerp(Color::sea, Color::neon, Rnd::rndn()))
+MagicTree::MagicTree(const Point& p) : Object(p, 5, Color::lerp(Color::sea, Color::neon, Rnd::rndn()))
 {
 	m_bgColor = Color::lerp(Color(12, 8, 4), Color(0, 8, 4), Rnd::rndn());
 

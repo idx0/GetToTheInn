@@ -18,8 +18,6 @@ struct _mouse
 
 static _mouse _ms;
 
-///////////////////////////////////////////////////////////////////////////////
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -146,7 +144,8 @@ Engine::Engine() :
 	beam(false), beam_angle(140.0f),
 	m_updateNeeded(true), m_quit(false)
 {
-	TCODConsole::setCustomFont("font8x8-thin.png", TCOD_FONT_LAYOUT_ASCII_INROW);
+	TCODConsole::setCustomFont("font.png", TCOD_FONT_LAYOUT_ASCII_INROW);
+//	TCODConsole::setCustomFont("font8x8-thin.png", TCOD_FONT_LAYOUT_ASCII_INROW);
 	TCODConsole::initRoot(WINDOW_WIDTH, WINDOW_HEIGHT + STATUS_HEIGHT, "GttI", false);
 
 	TCODConsole::mapAsciiCodesToFont(0, 255, 0, 0);
@@ -339,53 +338,6 @@ void Engine::drawCircle(const Point& o, int r)
 
 void Engine::render()
 {
-#if 0
-	m_context->console()->clear();
-
-	Rect r = m_context->viewport()->viewport();
-	
-	// render player's view
-	for (int x = 0; x < r.width(); x++) {
-		for (int y = 0; y < r.height(); y++) {
-			DiscoveryModel* dm = &m_context->grid()->at(x + r.left(), y + r.top())->render->discover;
-			LightingModel* lm = &m_context->grid()->at(x + r.left(), y + r.top())->render->lighting;
-
-			Object* obj = m_context->objAt(x + r.left(), y + r.top());
-			
-//			drawGround(x, y,
-//				((lm->lightLevel > 0.0f) && (dm->seen)),
-//				m_context->temperature()->at(x, y));
-			draw(x, y, lm, dm, obj->tile());
-		}
-	}
-
-	// render player
-	int px = m_player->coords().x() - r.left();
-	int py = m_player->coords().y() - r.top();
-
-	m_context->console()->setChar(px, py, m_player->tile().icon);
-	m_context->console()->setCharForeground(px, py, m_player->tile().litColor);
-
-	// effects layer
-//	if (m_emitter) { m_emitter->render(m_mapEffects); }
-
-
-	// -- ground effects --
-//	TCODConsole::blit(m_groundEffects, 0, 0, 0, 0, TCODConsole::root, 0, 0, 0.0f, 0.5f);
-
-	// -- map objects --
-	TCODConsole::blit(m_context->console(), 0, 0, 0, 0, TCODConsole::root, 0, 0);
-
-#ifdef USE_CURSOR
-	// -- map effects --
-	m_mapEffects->setKeyColor(TCODColor::black);
-	TCODConsole::blit(m_mapEffects, 0, 0, 0, 0, TCODConsole::root, 0, 0, 0.5f, 0.5f);
-
-	// -- cursor --
-	TCODConsole::blit(m_cursor, 0, 0, 0, 0, TCODConsole::root, m_mouse.cx, m_mouse.cy, 0.0f, 0.25f);
-#endif
-#endif
-
 	sys::event_payload pl;
 
 	pl.ptr = NULL;
@@ -398,57 +350,6 @@ void Engine::render()
 
 void Engine::update(int kc)
 {
-#if 0
-	TCOD_event_t ev = TCODSystem::checkForEvent(TCOD_EVENT_ANY, &m_key, &m_mouse);
-
-	kc = NNEIGHBORS;
-
-	// handle inputs
-	if (ev == TCOD_EVENT_KEY_PRESS) {
-		kc = handleKeyDown(m_key);
-	}
-
-	
-	// update context
-	m_context->update();
-
-	if (m_emitter) { m_emitter->update(); }
-
-	// move player
-	if (m_player->move(NEIGHBORS[kc].dx, NEIGHBORS[kc].dy, m_context->grid())) {
-		m_context->viewport()->scroll(NEIGHBORS[kc].dx, NEIGHBORS[kc].dy);
-	}
-
-	// calculate lighting
-	LightingEngine::getInstance()->calculateLighting(m_context->grid(), m_context->viewport()->render());
-
-	// update player
-	m_player->update(m_context->grid());
-
-#ifdef USE_CURSOR
-	_ms.p = Point(m_mouse.cx, m_mouse.cy);
-	if (ev == TCOD_EVENT_MOUSE_PRESS) {
-		_ms.pressed = true;
-	} else if (ev == TCOD_EVENT_MOUSE_RELEASE) {
-		_ms.pressed = false;
-	}
-
-	if (ev == TCOD_EVENT_MOUSE_MOVE) {
-		if ((m_mouse.dx != 0) || (m_mouse.dy != 0)) {
-			// TODO: render to map effects
-			m_mapEffects->clear();
-
-			PVector path;
-			Point sm = m_context->viewport()->screenToMap(_ms.p);
-
-			if (m_context->grid()->inbounds(sm)) {
-				Pathfinder::dijkstra(path, m_context->grid(), m_player->coords(), sm, m_mapEffects);
-			}
-		}
-	}
-#endif
-#endif
-
 	sys::event_payload pl;
 
 //	pl.ptr = // TODO key input
