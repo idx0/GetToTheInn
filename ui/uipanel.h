@@ -9,7 +9,7 @@ namespace ui {
 class panel : public widget
 {
 public:
-	explicit panel(const Color& color, widget *parent = NULL);
+	explicit panel(const Color& color = Color::black, widget *parent = NULL);
 	virtual ~panel(void);
 
 	virtual void setSize(const Rect &size);

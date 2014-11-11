@@ -118,12 +118,32 @@ void PointEmitter::render(TCODConsole* screen)
 	}
 }
 
-AmbientEmitter::AmbientEmitter(const Size& size) : m_size(size)
+AmbientEmitter::AmbientEmitter(const Size& size) : m_size(size), m_eight(false)
 {
+	int i;
+	m_map = new Particle*[size.area()];
+
+	for (i = 0; i < size.area(); i++) { m_map[i] = NULL; }
+
+	// seed emitters
+	i = 0;
+	static const int SEEDS = 20;
+	while (i < SEEDS) {
+		int x = Rnd::between(0, size.width());
+		int y = Rnd::between(0, size.height());
+		int j = x + size.width() * y;
+
+		if (m_map[j] == NULL) {
+			m_map[j] = new FlameParticle(Point(x, y));
+			m_particles.push_back(m_map[j]);
+			i++;
+		}
+	}
 }
 
 AmbientEmitter::~AmbientEmitter()
 {
+	delete[] m_map;
 }
 
 void AmbientEmitter::update()
@@ -166,14 +186,35 @@ void AmbientEmitter::render(TCODConsole* screen)
 
 void AmbientEmitter::emit()
 {
-	static const int num = (float)m_size.area() * 0.1f;
+	int dir, x, y;
 
-	while (m_particles.size() < num) {
-		Point p(m_size.width() * Rnd::rndn(),
-				m_size.height() * Rnd::rndn());
+	ParticleList::iterator it = m_particles.begin();
 
-		AshParticle *ap = new AshParticle(p);
-		m_particles.push_back(ap);
+	for (; it != m_particles.end(); it++) {
+		int ddir = NNEIGHBORS;
+		const DN* dirs;
+
+		if (m_eight) {
+			dirs = NEIGHBORS;
+		} else {
+			ddir = NCARDINAL;
+			dirs = CARDINAL;
+		}
+
+		// place
+		dir = Rnd::between(0, ddir);
+		for (int i = 0; i < ddir; i++) {
+			dir = (dir + i) % ddir;
+			x = (*it)->position().x() + dirs[dir].dx;
+			y = (*it)->position().y() + dirs[dir].dy;
+			int j = x + m_size.width() * y;
+
+			if (m_map[j] == NULL) {
+				m_map[j] = new FlameParticle(Point(x, y));
+				m_particles.push_back(m_map[j]);
+				break;
+			}
+		}
 	}
 }
 

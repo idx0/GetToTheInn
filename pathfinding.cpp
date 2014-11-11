@@ -47,7 +47,7 @@ void Pathfinder::dijkstra(PVector& path, TheGrid *grid, const Point& s, const Po
 	frontier.put(s, 0.0f);
 
 	// end tile not walkable, return
-	if (!grid->get(g)->render->mobility.walkable) return;
+	if (!(grid->get(g)->render->mobility.flags & M_WALKABLE)) return;
 
 	while (!frontier.empty()) {
 		cur = frontier.get();
@@ -64,7 +64,7 @@ void Pathfinder::dijkstra(PVector& path, TheGrid *grid, const Point& s, const Po
 
 			float cost = costs[cur] + fake_costs[i];
 
-			if ((grid->inbounds(Point(n.x, n.y))) && (grid->at(Point(n.x, n.y))->render->mobility.walkable)) {
+			if ((grid->inbounds(Point(n.x, n.y))) && (grid->get(g)->render->mobility.flags & M_WALKABLE)) {
 				bool visited = (costs.count(n) > 0);
 
 				if ((!visited) || (cost < costs[n])) {

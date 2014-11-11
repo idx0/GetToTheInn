@@ -56,13 +56,10 @@ MagicTree::MagicTree(const Point& p) : Object(p, 5, Color::lerp(Color::sea, Colo
 	m_light = new Light(m_position.x(), m_position.y(), Rnd::betweenf(0.8f, 1.2f), Rnd::between(12,16));
 	m_light->color = m_fgColor;
 
-	m_mobilityModel.walkable = false;
-	m_mobilityModel.jumpable = false;
-	m_mobilityModel.reachable = true;
+	m_mobilityModel.flags |= M_REACHABLE;
 
-	m_lightingModel.ambientLevel = 4.0f;
-	m_lightingModel.fullIfVisible = true;
-	m_lightingModel.transparent = false;
+	m_lightingModel.ambientColor = Color(96, 96, 96);
+	m_lightingModel.flags |= L_ALWAYS_LIT;
 
 	m_flavor = std::string("a large tree glowing with magical energy");
 }
@@ -82,13 +79,10 @@ MagicShroom::MagicShroom(const Point& p) : Object(p, 140, Color::lerp(Color::vio
 						Rnd::betweenf(0.8f, 1.25f), Rnd::between(2,3),
 						Color::lerp(Color::han, Color::purple, Rnd::rndn()));
 
-	m_mobilityModel.walkable = false;
-	m_mobilityModel.jumpable = false;
-	m_mobilityModel.reachable = true;
+	m_mobilityModel.flags |= (M_WALKABLE | M_JUMPABLE | M_REACHABLE);
 
-	m_lightingModel.ambientLevel = 4.0f;
-	m_lightingModel.fullIfVisible = false;
-	m_lightingModel.transparent = true;
+	m_lightingModel.ambientColor = Color(96, 96, 96);
+	m_lightingModel.flags |= L_TRANSPARENT;
 
 	m_flavor = std::string("a strange looking fungus, possibly with magical properties");
 }

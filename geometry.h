@@ -32,6 +32,15 @@ static const DN NEIGHBORS[NNEIGHBORS + 1] = {
 #define NORTH		6
 #define NORTHEAST	7
 
+#define NCARDINAL	4
+
+static const DN CARDINAL[NCARDINAL] = {
+	NEIGHBORS[NORTH],
+	NEIGHBORS[SOUTH],
+	NEIGHBORS[EAST],
+	NEIGHBORS[WEST]
+};
+
 static bool cardinal(int dir)
 {
 	return ((dir == EAST) ||

@@ -12,13 +12,17 @@ namespace ui {
 
 		virtual void draw(canvas *console);
 
-		void setLabel(const std::string& sz) { m_text = sz; }
+		void setLabel(const std::string& sz);
 		void setTextColor(const Color& c) { m_color = c; }
+		void setSize(const Rect &size);
 
 		std::string getText() const;
 	protected:
 
+		std::string wrap(const std::string& text, int margin);
+
 		std::string m_text;
+		Rect m_textRect;
 		Color m_color;
 	};
 

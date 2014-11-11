@@ -26,10 +26,22 @@ void canvas::draw(const Point& p, int c, const Color& fg)
 void canvas::drawText(const Rect& bounds, const std::string& sz, const Color& fg)
 {
 	int w = std::min(bounds.width(), (int)sz.length());
+	int i = 0, j = 0;
+	int cnt = 0;
 	
-	for (int i = 0; i < w; i++) {
-		int c = sz[i];
-		draw(Point(i + bounds.left(), bounds.top()), c, fg);
+	while (cnt < sz.length()) {
+		int c = sz[cnt];
+
+		if (c == '\n') {
+			j++;
+			i = 0;
+			if (j >= bounds.height()) break;
+		} else {
+			draw(Point(i + bounds.left(), bounds.top() + j), c, fg);
+			i++;
+		}
+
+		cnt++;
 	}
 }
 

@@ -25,13 +25,8 @@ Dirt::Dirt(int x, int y) : Object(x, y, ' ', Color::black)
 	
 	m_icon		= icons[Rnd::between(0, 3)];
 
-	m_mobilityModel.walkable = true;
-	m_mobilityModel.jumpable = true;
-	m_mobilityModel.reachable = true;
-
-	m_lightingModel.ambientLevel = 0.0f;
-	m_lightingModel.fullIfVisible = false;
-	m_lightingModel.transparent = true;
+	m_mobilityModel.flags |= (M_WALKABLE | M_JUMPABLE | M_REACHABLE);
+	m_lightingModel.flags |= L_TRANSPARENT;
 
 	m_flavor = std::string("the ground");
 }
@@ -45,13 +40,8 @@ Grass::Grass(const Point& p) : Object(p, ' ', Color::black)
 
 	m_icon		= icons[Rnd::between(0, 4)];
 
-	m_mobilityModel.walkable = true;
-	m_mobilityModel.jumpable = true;
-	m_mobilityModel.reachable = true;
-
-	m_lightingModel.ambientLevel = 0.0f;
-	m_lightingModel.fullIfVisible = false;
-	m_lightingModel.transparent = true;
+	m_mobilityModel.flags |= (M_WALKABLE | M_JUMPABLE | M_REACHABLE);
+	m_lightingModel.flags |= L_TRANSPARENT;
 
 	m_flavor = std::string("grassy turf");
 }
@@ -62,14 +52,6 @@ Wall::Wall(int x, int y) : Object(x, y, '#', Color::lerp(Color::grey, Color::azu
 {
 	m_bgColor = Color::lerp(Color(12, 12, 12), Color(0, 12, 24), 0.40f);
 
-	m_mobilityModel.walkable = false;
-	m_mobilityModel.jumpable = false;
-	m_mobilityModel.reachable = false;
-
-	m_lightingModel.ambientLevel = 0.0f;
-	m_lightingModel.fullIfVisible = false;
-	m_lightingModel.transparent = false;
-
 	m_flavor = std::string("a rough stone wall");
 }
 
@@ -78,14 +60,6 @@ FloraWall::FloraWall(const Point& p) : Object(p, '#', Color(121, 110, 64))
 	m_fgColor = Color::lerp(Color(35, 41, 22), Color(59, 77, 22), Rnd::rndn());
 	m_bgColor = Color::lerp(Color(6, 6, 0), Color(0, 12, 0), Rnd::betweenf(0.3f, 0.6f));
 
-	m_mobilityModel.walkable = false;
-	m_mobilityModel.jumpable = false;
-	m_mobilityModel.reachable = false;
-
-	m_lightingModel.ambientLevel = 0.0f;
-	m_lightingModel.fullIfVisible = false;
-	m_lightingModel.transparent = false;
-
 	m_flavor = std::string("a dense overgrowth impedes your progress");
 }
 
@@ -93,13 +67,10 @@ Torch::Torch(int x, int y, int level, int rad) : Object(x, y, 'i', TCODColor::go
 {
 	m_light = new Light(x, y, level, rad);
 
-	m_mobilityModel.walkable = false;
-	m_mobilityModel.jumpable = true;
-	m_mobilityModel.reachable = true;
+	m_mobilityModel.flags |= (M_JUMPABLE | M_REACHABLE);
 
-	m_lightingModel.ambientLevel = 3.5f;
-	m_lightingModel.fullIfVisible = true;
-	m_lightingModel.transparent = false;
+	m_lightingModel.ambientColor = Color(96, 96, 96);
+	m_lightingModel.flags |= L_ALWAYS_LIT;
 }
 
 Torch::~Torch()
@@ -244,7 +215,7 @@ Map::~Map()
 bool Map::isWall(int x, int y) const
 {
 	if (inbounds(x, y)) {
-		return !m_grid.get(x, y)->walkable;
+		return !(m_grid.get(x, y)->flags & M_WALKABLE);
 	}
 
 	return false;

@@ -33,17 +33,23 @@ namespace sys {
 	public:
 		enum Type {
 			E_NULL = 0,
+			E_ID,
 			E_VALUE,
 			E_COLOR,
 			E_STRING,
 			E_BITFIELD,
 			E_TIME,
+			E_BOOL,
 			E_ENUM
 		};
 
 	public:
-		EToken() {}
+		EToken() : m_type(E_NULL) {}
+		EToken(const Type& type) : m_type(type) {}
+
 		virtual ~EToken() {}
+
+		static const std::string TYPE_NAMES[];
 
 	protected:
 
@@ -111,6 +117,9 @@ namespace sys {
 	class EValue : public EToken
 	{
 	public:
+		EValue() : EToken(E_VALUE) {}
+		virtual ~EValue() {}
+
 		virtual PEValue value() = 0;
 	};
 
@@ -264,6 +273,7 @@ namespace sys {
 	static PEValue func_math_sub(EValue* a, EValue *b);
 	static PEValue func_math_sin(EValue* x);
 	static PEValue func_math_cos(EValue* x);
+	static PEValue func_math_log(EValue* x);
 	static PEValue func_math_sqr(EValue* x);
 	static PEValue func_math_sqrt(EValue* x);
 
@@ -274,6 +284,9 @@ namespace sys {
 	class EColor : public EToken
 	{
 	public:
+		EColor() : EToken(E_COLOR) {}
+		virtual ~EColor() {}
+
 		virtual Color value() = 0;
 	};
 
@@ -298,7 +311,12 @@ namespace sys {
 			E_COLOR_DSAT,
 			E_COLOR_MULT,
 			E_COLOR_AUGM,
-			E_COLOR_SMTH
+			E_COLOR_SMTH,
+
+			E_COLOR_GLIT,	// greyscale lightness
+			E_COLOR_GLUM,	// greyscale luminosity
+			E_COLOR_GAVE,	// greyscale average
+
 		};
 
 	public:
@@ -379,6 +397,33 @@ namespace sys {
 	// EOF Parsing Classes													 //
 	///////////////////////////////////////////////////////////////////////////
 
+	class EObject
+	{
+		friend class EObjectBuilder;
+	public:
+
+
+	protected:
+		typedef std::vector<EToken::Type> Syntax;
+		typedef std::vector<EToken*> Tokens;
+
+		Syntax m_syntax;
+		Tokens m_tokens;
+	};
+
+	class EObjectBuilder
+	{
+	public:
+		// parses the syntax definition given by defn printing an error
+		// and returning false on failure.  On success, true is returned
+		// and the current syntax is set to the parsed values.
+		bool loadSyntax(const std::string& defn);
+
+	protected:
+		EObject::Syntax m_currentSyntax;
+		std::vector<EObject*> m_objects;
+	};
+
 	class EParser
 	{
 	public:
@@ -402,6 +447,10 @@ namespace sys {
 		void parseField();
 
 		void parseToken();
+
+		bool verifyShortString(const std::string& sz);
+
+		static unsigned char specialEscape(unsigned char c);
 
 	protected:
 

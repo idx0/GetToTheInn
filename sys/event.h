@@ -23,6 +23,7 @@ enum event_type
 
 	EVENT_RENDER,
 	EVENT_UPDATE,
+	EVENT_LIGHTING,	// recalculates lighting
 	EVENT_ACTION,	// player action
 	EVENT_WORK,
 

@@ -1,0 +1,24 @@
+[version:1.0]
+[author:index_zero]
+[content:adsr]
+[meta:]
+[:]{
+	id, value, value, enum, value, enum, value, value, enum
+}
+# id,					amplitude,	attack,					decay,					sustain,	release,
+#									duration,	function,	duration,	function,	duration,	duration,	function
+[adsr.simple]
+{ adsr_linear_in,		1,			1,			LINEAR,		0,			-,			0,			0,			-		}
+{ adsr_linear_out,		1,			0,			-,			0,			-,			0,			1,			LINEAR	}
+{ asdr_sqr_in,			1,			1,			SQUARE,		0,			-,			0,			0,			-		}
+{ adsr_sqr_out,			1,			0,			-,			0,			-,			0,			1,			SQUARE	}
+{ asdr_log_in,			1,			1,			LOG,		0,			-,			0,			0,			-		}
+{ adsr_log_out,			1,			0,			-,			0,			-,			0,			1,			LOG		}
+{ asdr_sqrt_in,			1,			1,			SQRT,		0,			-,			0,			0,			-		}
+{ adsr_sqrt_out,		1,			0,			-,			0,			-,			0,			1,			SQRT	}
+[adsr.flashes]
+{ adsr_flash_simple,	0.8,		0.1,		LINEAR,		0.1,		LINEAR,		0.65,		0.15,		LINEAR	}
+{ adsr_flash_long,		0.8,		0.025,		LINEAR,		0.025,		LINEAR,		0.9,		0.05,		LINEAR	}
+{ adsr_flash_fade		0.7,		0.1,		LINEAR,		0.1,		LINEAR,		0,			0.8,		SQUARE	}
+[adsr.misc]
+{ adsr_triangle,		1,			0.5,		LINEAR,		0,			-,			0,			0.5,		LINEAR	}

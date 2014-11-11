@@ -69,11 +69,12 @@ public:
 
 protected:
 
-	virtual void emit() = 0;
-
 	typedef std::list<Particle*> ParticleList;
 
 	ParticleList m_particles;
+
+	virtual void emit() = 0;
+
 	Delay* m_delay;
 
 	int m_repeat;
@@ -91,7 +92,6 @@ public:
 	virtual void render(TCODConsole* screen);
 
 protected:
-
 	virtual void emit();
 
 	Point m_origin;
@@ -109,6 +109,8 @@ public:
 protected:
 
 	Size m_size;
+	Particle** m_map;
+	bool m_eight;
 
 	virtual void emit();
 };

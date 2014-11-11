@@ -9,16 +9,30 @@
 namespace sys {
 	namespace eof {
 
+	const std::string EToken::TYPE_NAMES[] = {
+			"NULL",
+			"id",
+			"value",
+			"color",
+			"string",
+			"bitfield",
+			"time",
+			"bool",
+			"enum"
+	};
+
+	///////////////////////////////////////////////////////////////////////////
+
 	int _PEValue::asInt() const
 	{
 		if (t == INTEGER) return u.i;
-		return 0;
+		return (int)u.f;
 	}
 
 	float _PEValue::asFloat() const
 	{
 		if (t == FLOAT) return u.f;
-		return 0.0f;
+		return (float)u.i;
 	}
 
 	void _PEValue::fromInt(int i)
@@ -130,6 +144,7 @@ namespace sys {
 		{ "SUB",	NULL,				NULL,				func_math_sub		},
 		{ "SIN",	NULL,				func_math_sin,		NULL				},
 		{ "COS",	NULL,				func_math_cos,		NULL				},
+		{ "LOG",	NULL,				func_math_log,		NULL				},
 		{ "SQR",	NULL,				func_math_sqr,		NULL				},
 		{ "SQRT",	NULL,				func_math_sqrt,		NULL				},
 	};
@@ -311,6 +326,19 @@ namespace sys {
 		return pg;
 	}
 
+	PEValue func_math_log(EValue* x)
+	{
+		PEValue pg;
+
+		if (x) {
+			PEValue xv = x->value();
+
+			pg.fromFloat(std::log10(xv.asFloat()));
+		}
+
+		return pg;
+	}
+
 	PEValue func_math_sqr(EValue* x)
 	{
 		PEValue pg;
@@ -345,12 +373,12 @@ namespace sys {
 
 	///////////////////////////////////////////////////////////////////////////
 
-	EString::EString()
+	EString::EString() : EToken(E_STRING)
 	{
 		// nothing
 	}
 
-	EString::EString(const std::string& sz) : m_string(sz)
+	EString::EString(const std::string& sz) : EToken(E_STRING), m_string(sz)
 	{
 		// nothing
 	}
@@ -516,6 +544,24 @@ namespace sys {
 				(c == '_'));
 	}
 
+	unsigned char EParser::specialEscape(unsigned char c)
+	{
+		unsigned char ret = c;
+
+		switch (c) {
+		default: break;
+		case 'n': ret = '\n'; break;
+		case 'r': ret = '\r'; break;
+		case 't': ret = '\t'; break;
+		case '0': ret = '\0'; break;
+		case 'v': ret = '\v'; break;
+		case 'f': ret = '\f'; break;
+		case 'a': ret = '\a'; break;
+		}
+
+		return ret;
+	}
+
 	pEStatement EParser::parseDecl()
 	{
 		std::string key, value;
@@ -594,12 +640,7 @@ namespace sys {
 			} else {
 				// legal character
 				if (escaped) {
-					switch (c) {
-					default: break;
-					case 'n': c = '\n'; break;
-					case 'r': c = '\r'; break;
-					case 't': c = '\t'; break;
-					}
+					c = specialEscape(c);
 
 					escaped = false;
 				}
@@ -706,18 +747,15 @@ namespace sys {
 				}
 			} else if (escaped) {
 				// we just saw an escaped character, is it something special?
-				switch (c) {
-				default: statement += c; break;
-				case 'n': statement += '\n'; break;
-				case 'r': statement += '\r'; break;
-				case 't': statement += '\t'; break;
-				}
+				statement += specialEscape(c);
 
 				escaped = false;
-			} else if ((m_context.flags & E_PARSE_IN_DQUOTE) && (c == EOF_DOUBLE_QUOTE)) {
+			} else if ((m_context.flags & E_PARSE_IN_DQUOTE) &&
+					   (c == EOF_DOUBLE_QUOTE)) {
 				m_context.flags &= ~E_PARSE_IN_DQUOTE;
 				break;
-			} else if ((m_context.flags & E_PARSE_IN_SQUOTE) && (c == EOF_SINGLE_QUOTE)) {
+			} else if ((m_context.flags & E_PARSE_IN_SQUOTE) &&
+					   (c == EOF_SINGLE_QUOTE)) {
 				m_context.flags &= ~E_PARSE_IN_SQUOTE;
 				break;
 			} else {
@@ -727,6 +765,15 @@ namespace sys {
 
 //		printf("quote:=%s\n", statement.c_str());
 		return statement;
+	}
+
+	bool EParser::verifyShortString(const std::string& sz)
+	{
+		for (int i = 0; i < sz.length(); i++) {
+			if (!isshort(sz.at(i))) return false;
+		}
+
+		return true;
 	}
 
 	void EParser::parseField()
@@ -853,6 +900,7 @@ namespace sys {
 		//	SUB(a,b)				returns a - b
 		//	SIN(x)					returns sine of x
 		//	COS(x)					returns cosine of x
+		//	LOG(x)					returns base 10 logarithm of x
 		//	SQR(x)					returns x * x
 		//	SQRT(x)					returns the square root of x
 		// contants:

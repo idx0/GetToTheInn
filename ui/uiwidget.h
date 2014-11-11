@@ -68,7 +68,22 @@ private:
 	policy_rule m_hrule;
 };
 
-class action
+
+class widget_operator
+{
+public:
+	widget_operator() {}
+	virtual ~widget_operator() {}
+
+	virtual void trigger() {}
+	virtual void click() {}
+	virtual void mouseenter(const Point& p) {}
+	virtual void mouseleave(const Point& p) {}
+	virtual void mousemove(const Point& p) {}
+};
+
+
+class action : public widget_operator
 {
 public:
 	typedef void (*trigger_func)(void);
@@ -95,6 +110,7 @@ protected:
 
 	trigger_list m_func;
 };
+
 
 class widget
 {
@@ -129,6 +145,7 @@ protected:
 private:
 	widget *m_parent;
 };
+
 
 class noop : public widget
 {

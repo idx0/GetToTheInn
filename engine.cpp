@@ -27,6 +27,7 @@ UpdateThread::UpdateThread(Context* ctx, Player* player) :
 {
 	m_listener->addListener(sys::EVENT_UPDATE, ev_update);
 	m_listener->addListener(sys::EVENT_ACTION, ev_action);
+	m_listener->addListener(sys::EVENT_LIGHTING, ev_lighting);
 }
 
 UpdateThread::~UpdateThread()
@@ -47,6 +48,17 @@ void UpdateThread::ev_update(void *tag, const sys::event_payload::_data& data)
 	if (ut) {
 		ut->block();
 		ut->update();
+		ut->unblock();
+	}
+}
+
+void UpdateThread::ev_lighting(void *tag, const sys::event_payload::_data& data)
+{
+	UpdateThread* ut = (UpdateThread*)tag;
+
+	if (ut) {
+		ut->block();
+		ut->lighting();
 		ut->unblock();
 	}
 }
@@ -87,6 +99,12 @@ void UpdateThread::unblock()
 	Engine::restoreMode(m_mode);
 }
 
+void UpdateThread::lighting()
+{
+	LightingEngine::getInstance()->calculateLighting(m_context->grid(),
+													 m_context->viewport()->render());
+}
+
 void UpdateThread::update()
 {
 #if 0
@@ -105,8 +123,7 @@ void UpdateThread::update()
 //	if (m_emitter) { m_emitter->update(); }
 
 	// calculate lighting
-	LightingEngine::getInstance()->calculateLighting(m_context->grid(),
-													 m_context->viewport()->render());
+	lighting();
 
 	// update player
 	m_player->update(m_context->grid());
@@ -191,24 +208,7 @@ void Engine::init()
 	e->m_uiThread = new ui::uithread();
 
 	// create some UI stuff
-	Size s = e->m_context->viewport()->viewport().size();
-	int ptop = s.height();
-
-	ui::panel* p0 = new ui::panel(Color(32,32,32));
-	e->m_modeLabel = new ui::label("-- waiting --");
-
-	ui::panel* p1 = new ui::panel(Color(32,32,32));
-	e->m_flavorLabel = new ui::label("");
-	e->m_flavorLabel->setTextColor(Color::grey);
-
-	p0->setSize(Rect(ptop, 0, ptop + 1, s.width()));
-	p0->addChild(e->m_modeLabel);
-
-	p1->setSize(Rect(ptop + 1, 0, ptop + 2, s.width()));
-	p1->addChild(e->m_flavorLabel);
-
-	e->m_uiThread->own(p0);
-	e->m_uiThread->own(p1);
+	e->intiui();
 
 #ifdef THREADS
 	// create update thread
@@ -223,6 +223,44 @@ void Engine::init()
 	// create render thread
 	e->m_renderThread->create_thread();
 #endif
+}
+
+
+void Engine::intiui()
+{
+	Size s = m_context->viewport()->viewport().size();
+	int ptop = s.height();
+
+	ui::panel* p0 = new ui::panel(Color(32,32,32));
+	e->m_modeLabel = new ui::label("-- waiting --");
+
+	ui::panel* p1 = new ui::panel(Color(32,32,32));
+	m_flavorLabel = new ui::label("");
+	m_flavorLabel->setTextColor(Color::grey);
+
+	p0->setSize(Rect(ptop, 0, ptop + 1, s.width()));
+	p0->addChild(e->m_modeLabel);
+
+	p1->setSize(Rect(ptop + 1, 0, ptop + 2, s.width()));
+	p1->addChild(e->m_flavorLabel);
+
+	m_messageLabel = new ui::label("The floor beneath you is made of large stone slabs.  They look well worn -- and much neglected -- a relic of civiliza- tions past.  A mossy fungus seems to grow between the cracks.");
+	m_messageWindow = new ui::panel();
+
+	m_messageWindow->setSize(Rect(5, 46, 21, 91));	// position 1
+	m_messageWindow->setSize(Rect(52, 46, 68, 91));	// position 2
+	m_messageWindow->setSize(Rect(52, 4, 68, 49));	// poisiton 3
+
+	ui::frame *frame = new ui::frame(ui::FRAME_TYPE_THIN);
+	frame->setColor(Color::white);
+	frame->addChild(m_messageLabel);
+
+	m_messageWindow->addChild(frame);
+	m_messageWindow->hide();
+
+	m_uiThread->own(p0);
+	m_uiThread->own(p1);
+	m_uiThread->own(m_messageWindow);
 }
 
 void Engine::final()
@@ -310,7 +348,7 @@ void Engine::drawLine(const Point& p0, const Point& p1)
 		// draw(x, y);
 		m_mapEffects->setCharBackground(x, y, TCODColor::magenta);
 
-		if (!m_context->grid()->get(x, y)->render->mobility.walkable) break;
+		if (!(m_context->grid()->get(x, y)->render->mobility.flags & M_WALKABLE)) break;
 		if ((x == p1.x()) && (y == p1.y())) break;
 
 		e2 = 2 * err;
@@ -466,7 +504,7 @@ void Engine::checkForInput()
 		TheGrid* g = e->m_context->grid();
 
 		e->m_uiThread->lock();
-		if ((obj) && (g->get(mp)->render->discover.explored)) {
+		if ((obj) && (g->get(mp)->render->discover.flags & D_EXPLORED)) {
 			e->m_flavorLabel->setLabel(obj->flavor());
 		} else {
 			e->m_flavorLabel->setLabel("");
@@ -488,6 +526,7 @@ void Engine::checkForInput()
 int Engine::handleKeyDown(const TCOD_key_t& key)
 {
 	int kc = NNEIGHBORS;
+	static int windowPos = 0;
 
 	if (key.pressed == 0) return kc;
 
@@ -510,6 +549,11 @@ int Engine::handleKeyDown(const TCOD_key_t& key)
 			} else if (k.isKey('e')) {
 //				delete m_emitter;
 //				m_emitter = new Emitter(_ms.p);
+			} else if (k.isKey('x')) {
+				e->m_uiThread->lock();
+				e->m_modeLabel->setLabel("INSPECT");
+				e->m_uiThread->unlock();
+				e->m_mode = MODE_COMBAT;
 			}
 			break;
 		}
@@ -532,6 +576,27 @@ int Engine::handleKeyDown(const TCOD_key_t& key)
 			e->m_uiThread->unlock();
 			e->m_mode = nmode;
 
+			break;
+		}
+		case TCODK_TAB:
+		{
+			windowPos = (windowPos + 1) % 4;
+
+			e->m_uiThread->lock();
+			switch (windowPos) {
+			case 0: e->m_messageWindow->hide(); break;
+			case 1:
+				e->m_messageWindow->show();
+				e->m_messageWindow->setSize(Rect(5, 46, 21, 91));	// position 1
+				break;
+			case 2:
+				e->m_messageWindow->setSize(Rect(52, 46, 68, 91));	// position 2
+				break;
+			case 3:
+				e->m_messageWindow->setSize(Rect(52, 4, 68, 49));	// poisiton 3
+				break;
+			}
+			e->m_uiThread->unlock();
 			break;
 		}
 		case TCODK_PRINTSCREEN:

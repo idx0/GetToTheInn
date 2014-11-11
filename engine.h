@@ -49,12 +49,14 @@ public:
 
 	static void ev_update(void *tag, const sys::event_payload::_data& data);
 	static void ev_action(void *tag, const sys::event_payload::_data& data);
+	static void ev_lighting(void *tag, const sys::event_payload::_data& data);
 
 	void block();
 	void unblock();
 
 protected:
 
+	virtual void lighting();
 	virtual void update();
 
 protected:
@@ -86,6 +88,8 @@ public:
 	static void restoreMode(const InputMode& m);
 
 protected:
+
+	void intiui();
 
 	void render();
 	void update(int kc);
@@ -132,6 +136,9 @@ protected:
 
 	ui::label* m_flavorLabel;
 	ui::label* m_modeLabel;
+
+	ui::label* m_messageLabel;
+	ui::panel* m_messageWindow;
 
 	unsigned int m_renderFlags;
 

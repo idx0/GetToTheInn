@@ -25,21 +25,26 @@ enum frame_position
 class frame : public widget
 {
 public:
+	explicit frame(frame_type type, widget *parent = NULL);
 	explicit frame(const char *name, unsigned int len,
 		frame_type type, widget *parent = NULL);
 	virtual ~frame(void);
+
+	void setColor(const Color& color);
 
 	virtual void draw(canvas *console);
 	virtual void drawChildren(canvas *console);
 
 	void setTitle(const char *name, unsigned int len);
 protected:
-	int getFramePiece(frame_position p);
+	
+	static const int m_sFRAME_CHAR[8];
 
 private:
 	frame_type m_frame_type;
 	char m_title[255];
 	unsigned int m_length;
+	Color m_color;
 
 	Rect m_framerect;
 };

@@ -7,13 +7,13 @@ void Player::apply_visible(void *map, int x, int y, int dx, int dy, void *src)
 	Player* p = (Player *)src;
 
 	if ((g) && (g->inbounds(x, y))) {
-		g->at(x, y)->render->discover.seen = true;
+		g->at(x, y)->render->discover.flags |= D_SEEN;
 
-		if (g->get(x, y)->render->lighting.lightLevel > 0.0) {
+		if (g->get(x, y)->render->lighting.flags & L_LIT) {
 			// discovered!
-			g->at(x, y)->render->discover.explored = true;
+			g->at(x, y)->render->discover.flags |= D_EXPLORED;
 		} else {
-			g->at(x, y)->render->discover.hidden = true;
+			g->at(x, y)->render->discover.flags |= D_HIDDEN;
 		}
 	}
 }
@@ -43,7 +43,7 @@ bool Player::move(int dx, int dy, const TheGrid* grid)
 
 	bool ii = grid->inbounds(x, y);
 
-	if ((ii) && (grid->get(x, y)->render->mobility.walkable)) {
+	if ((ii) && (grid->get(x, y)->render->mobility.flags & M_WALKABLE)) {
 		m_position = Point(x, y);
 		m_light->position = Point(x, y);
 

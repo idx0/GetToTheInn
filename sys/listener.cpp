@@ -131,6 +131,7 @@ void listener::pop()
 			case EVENT_KEY_UP:
 			case EVENT_UPDATE:
 			case EVENT_ACTION:
+			case EVENT_LIGHTING:
 				success = call(m_callback[e.getType()].callback.data_listener, e.getPayload());
 				break;
 			case EVENT_DATA_CREATE:

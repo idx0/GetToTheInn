@@ -18,6 +18,7 @@ const std::string enumstr::stringify(const sys::event_type& t)
 		"EVENT_RESIZE",
 		"EVENT_RENDER",
 		"EVENT_UPDATE",
+		"EVENT_LIGHTING",
 		"EVENT_ACTION",
 		"EVENT_WORK",
 		"EVENT_DATA_CREATE",

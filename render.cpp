@@ -134,12 +134,10 @@ void RenderThread::drawNormal(int x, int y) const
 	Color dbg = bg, dfg = fg;	// dxg - saturated color (varies with ambient color)
 	Color fog = fg;				// fog-of-war color
 
-	// the light level of this tile (0.0 being dark, unlit - 1.0 being fully lit)
-	float llevel = std::min(1.0f, m_render->get(x, y)->lighting.lightLevel / (float)LightingEngine::sMAX_LIGHT_LEVEL);
+	float ac = m_render->get(x, y)->lighting.ambientColor.average();
 
 	// some ambient (dark, but visible) value - scaled by tile ambient light
-	float sat = std::max(sAMBIENT_MIN, std::min(sAMBIENT_MAX, m_render->get(x, y)->lighting.ambientLevel /
-															  (float)LightingEngine::sMAX_LIGHT_LEVEL));
+	float sat = std::max(sAMBIENT_MIN, std::min(sAMBIENT_MAX, ac / (float)255));
 
 	int icon = m_render->get(x, y)->tile.icon;
 
@@ -158,10 +156,8 @@ void RenderThread::drawNormal(int x, int y) const
 	Color lc = m_render->get(x, y)->lighting.lightColor;
 	lc.smooth();
 
-	llevel = (lc.r() + lc.b() + lc.g());
-
-	if (m_render->get(x, y)->discover.seen) {
-		if (llevel > 0) {
+	if (m_render->get(x, y)->discover.flags & D_SEEN) {
+		if (m_render->get(x, y)->lighting.flags & L_LIT) {
 			// if visible, draw at the given light level
 			Color lfg = Color::multiply(fg, lc);
 			Color lbg = Color::multiply(bg, lc);
@@ -170,7 +166,7 @@ void RenderThread::drawNormal(int x, int y) const
 
 			m_console->setCharForeground(x, y, lfg.toTCOD());
 			m_console->setCharBackground(x, y, lbg.toTCOD());
-		} else if (m_render->get(x, y)->discover.explored) {
+		} else if (m_render->get(x, y)->discover.flags & D_EXPLORED) {
 			// explored, but in the dark
 			m_console->setCharForeground(x, y, dfg.toTCOD());
 			m_console->setCharBackground(x, y, dbg.toTCOD());
@@ -180,13 +176,13 @@ void RenderThread::drawNormal(int x, int y) const
 			m_console->setCharBackground(x, y, TCODColor::black);
 		}
 
-		if ((m_render->get(x, y)->discover.explored) &&
-			(m_render->get(x, y)->lighting.fullIfVisible)) {
+		if ((m_render->get(x, y)->discover.flags & D_EXPLORED) &&
+			(m_render->get(x, y)->lighting.flags & L_ALWAYS_LIT)) {
 			m_console->setCharForeground(x, y, fg.toTCOD());
 		}
-	} else if (m_render->get(x, y)->discover.explored) {
-		if ((m_render->get(x, y)->lighting.transparent) &&
-			(!m_render->get(x, y)->lighting.fullIfVisible)) {
+	} else if (m_render->get(x, y)->discover.flags & D_EXPLORED) {
+		if ((m_render->get(x, y)->lighting.flags & L_TRANSPARENT) &&
+			(!(m_render->get(x, y)->lighting.flags & L_ALWAYS_LIT))) {
 			// if transparent, but not a full-if-visible token just color with
 			// a really dark fog of war
 			m_console->setCharForeground(x, y, fog.toTCOD());
@@ -225,10 +221,10 @@ void RenderThread::drawTruecolor(int x, int y) const
 	// draw char
 	m_console->setChar(x, y, icon);
 
-	if (m_render->get(x, y)->discover.seen) {
+	if (m_render->get(x, y)->discover.flags & D_SEEN) {
 		m_console->setCharForeground(x, y, fg.toTCOD());
 		m_console->setCharBackground(x, y, bg.toTCOD());
-	} else if (m_render->get(x, y)->discover.explored) {
+	} else if (m_render->get(x, y)->discover.flags & D_EXPLORED) {
 		m_console->setCharForeground(x, y, TCODColor::darkestGrey);
 		m_console->setCharBackground(x, y, TCODColor::black);
 	} else {
@@ -250,87 +246,6 @@ void RenderThread::drawFull(int x, int y) const
 
 void RenderThread::drawStealth(int x, int y) const
 {
-	static const float sSTEALTH_MAX = 0.75f;
-	static const float sSTEALTH_MIN = 0.65f;
-
-	Color fg = m_render->get(x, y)->tile.fgColor;
-	Color bg = m_render->get(x, y)->tile.bgColor;
-	Color dbg = bg, dfg = fg;	// dxg - saturated color (varies with ambient color)
-	Color fog = fg;				// fog-of-war color
-
-	// some ambient (dark, but visible) value - scaled by tile ambient light
-	float sat = std::max(sSTEALTH_MIN, std::min(sSTEALTH_MAX, m_render->get(x, y)->lighting.ambientLevel /
-															  (float)LightingEngine::sMAX_LIGHT_LEVEL));
-
-	int icon = m_render->get(x, y)->tile.icon;
-
-	// if there is no background color, and either the the icon is a space (so the fg color
-	// doesnt matter) or there is no foreground color, then just return because there is nothing
-	// to draw.
-	if ((bg == TCODColor::black) && ((icon == ' ') || (fg == TCODColor::black))) return;
-
-	// draw char
-	m_console->setChar(x, y, icon);
-
-	dfg.greyscale();
-	dfg *= 0.5f;
-
-	dbg.greyscale();
-	dbg *= 0.5f;
-
-	fog.darken(sat - sSTEALTH_MIN);
-
-	Color lc = m_render->get(x, y)->lighting.lightColor;
-	lc.smooth();
-	lc.normalize();
-	lc.greyscale();
-	lc.multiply(Color(132, 220, 220));
-
-	int llevel = (lc.r() + lc.b() + lc.g()) / 3;
-
-	if (m_render->get(x, y)->discover.seen) {
-		if (llevel > 0) {
-			// if visible, draw at the given light level
-			Color lfg = Color::multiply(fg, lc);
-			Color lbg = Color::multiply(bg, lc);
-			lfg.clamp(dfg, Color::white);
-			lbg.clamp(dbg, Color::white);
-
-			m_console->setCharForeground(x, y, lfg.toTCOD());
-			m_console->setCharBackground(x, y, lbg.toTCOD());
-		} else if (m_render->get(x, y)->discover.explored) {
-			// explored, but in the dark
-			m_console->setCharForeground(x, y, dfg.toTCOD());
-			m_console->setCharBackground(x, y, dbg.toTCOD());
-		} else {
-			// seen it, but not explored
-			m_console->setCharForeground(x, y, TCODColor::black);
-			m_console->setCharBackground(x, y, TCODColor::black);
-		}
-
-		if ((m_render->get(x, y)->discover.explored) &&
-			(m_render->get(x, y)->lighting.fullIfVisible)) {
-			m_console->setCharForeground(x, y, fg.toTCOD());
-		}
-	} else if (m_render->get(x, y)->discover.explored) {
-		if ((m_render->get(x, y)->lighting.transparent) &&
-			(!m_render->get(x, y)->lighting.fullIfVisible)) {
-			// if transparent, but not a full-if-visible token just color with
-			// a really dark fog of war
-			m_console->setCharForeground(x, y, fog.toTCOD());
-			m_console->setCharBackground(x, y, fog.toTCOD());
-		} else {
-			// otherwise, saturate
-			m_console->setCharForeground(x, y, dfg.toTCOD());
-			m_console->setCharBackground(x, y, dbg.toTCOD());
-		}
-
-//		m_console->setCharBackground(x, y, TCODColor::black);
-	} else {
-		// not seen, black
-		m_console->setCharForeground(x, y, TCODColor::black);
-		m_console->setCharBackground(x, y, TCODColor::black);
-	}
 }
 
 void RenderThread::drawDebugDiscovery(int x, int y) const
