@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 	Rnd::seed(time(NULL));
 	Engine::init();
 
-//	sys::eof::PETest();
+	sys::eof::PETest();
 
 	while ((!Engine::quit()) && 
 		   (!TCODConsole::isWindowClosed())) {

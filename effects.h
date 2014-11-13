@@ -3,6 +3,7 @@
 #include "util.h"
 #include "geometry.h"
 #include "common.h"
+#include "animation.h"
 
 #include <list>
 #include <libtcod.hpp>
@@ -147,7 +148,8 @@ public:
 
 protected:
 
-	TCODColor m_fire[12];
+//	TCODColor m_fire[12];
+	ColorAnimation m_animation;
 
 	int m_extent;
 	int m_totalLife;

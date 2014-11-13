@@ -1,6 +1,8 @@
 #pragma once
 
+#include <stdarg.h>
 #include <libtcod.hpp>
+#include <set>
 
 class Color
 {
@@ -190,3 +192,54 @@ Color operator/(const Color& lhs, float rhs);
 Color operator/(const Color& lhs, int rhs);
 Color operator/(float lhs, const Color& rhs);
 Color operator/(int lhs, const Color& rhs);
+
+// Color gradient class
+class Gradient
+{
+public:
+	// lerp(a, b)
+	Gradient(const Color& a = Color::black, const Color& b = Color::black);
+	// 0.0-0.5: lerp(a, b)
+	// 0.5-1.0: lerp(b, c)
+	Gradient(const Color& a, const Color& b, const Color& c);
+	Gradient(int ncolors, ...);
+	~Gradient();
+
+	// You can only add colors to the middle (between 0.0 and 1.0)
+	void addColor(const Color& c, float v);
+
+	// returns the color along the gradient, r is an element of [0,1]
+	Color getColor(float r) const;
+
+	Gradient& operator=(const Gradient& rhs);
+
+protected:
+
+	struct GradientPoint
+	{
+		float m_value;
+		Color m_color;
+
+		bool operator<(const GradientPoint& rhs) const
+		{
+			return (m_value < rhs.m_value);
+		}
+
+		bool operator==(const GradientPoint& rhs) const
+		{
+			return (m_value == rhs.m_value);
+		}
+
+		GradientPoint& operator=(const GradientPoint& rhs)
+		{
+			if (this != &rhs) {
+				m_value	= rhs.m_value;
+				m_color = rhs.m_color;
+			}
+
+			return *this;
+		}
+	};
+
+	std::set<GradientPoint> m_points;
+};

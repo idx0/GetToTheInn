@@ -241,18 +241,21 @@ void LinearParticle::update()
 
 FlameParticle::FlameParticle(const Point& pos) :
 	LinearParticle(pos, FPS),
+	m_animation(Gradient(4, Color(61, 15, 0), Color::flame, Color::orange, Color::yellow), FPS),
 	m_extent(8),
 	m_totalLife(FPS)
 {
-	int fire_idx[] = { 0, 3, 7, 11 };
-	TCODColor fire_col[] = {
-		TCODColor::flame,
-		TCODColor::orange,
-		TCODColor::yellow,
-		TCODColor::white
-	};
+//	int fire_idx[] = { 0, 3, 7, 11 };
+//	TCODColor fire_col[] = {
+//		TCODColor::flame,
+//		TCODColor::orange,
+//		TCODColor::yellow,
+//		TCODColor::white
+//	};
+//
+//	TCODColor::genMap(m_fire, 4, fire_col, fire_idx);
 
-	TCODColor::genMap(m_fire, 4, fire_col, fire_idx);
+	m_animation.setDelay(new ConstantDelay(1));
 }
 
 void FlameParticle::update()

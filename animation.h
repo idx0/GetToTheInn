@@ -1,13 +1,12 @@
 #pragma once
 
 #include "common.h"
-#include "lighting.h"
-#include "object.h"
 #include "delay.h"
 #include "util.h"
 
 #include <list>
 
+#if 0
 class Frame
 {
 public:
@@ -85,6 +84,8 @@ protected:
 	bool m_interacted;
 };
 
+#endif
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -99,26 +100,26 @@ public:
 		RELEASE
 	};
 
-	typedef float (*transform_func)(float);
+	typedef float (*func)(float);
 
-	static float t_linear(float f);
-	static float t_square(float f);
-	static float t_log(float f);
-	static float t_sqrt(float f);
+	static float LINEAR(float f);
+	static float SQUARE(float f);
+	static float LOG(float f);
+	static float SQRT(float f);
 
 public:
 	
-	ADSR(float amp, transform_func f);	// ADSR with simply attack only function
+	ADSR(float amp, func f);	// ADSR with simply attack only function
 	ADSR(float amp = 1.0f,
 		 float da = 0.0f, float dd = 0.0f, float ds = 1.0f, float dr = 0.0f,
-		 transform_func ta = NULL, transform_func td = NULL, transform_func tr = NULL);
+		 func ta = NULL, func td = NULL, func tr = NULL);
 
 	float transform(float r) const;
 
 	ADSR& operator=(const ADSR& rhs);
 
 	void initialize(float amp, float da, float dd, float ds, float dr, 
-					transform_func ta, transform_func td, transform_func tr);
+					func ta, func td, func tr);
 
 protected:
 
@@ -129,9 +130,9 @@ protected:
 	float m_amplitude;	// sustain amplitude
 	float m_duration[4];
 
-	transform_func m_attackFunc;
-	transform_func m_decayFunc;
-	transform_func m_releaseFunc;
+	func m_attackFunc;
+	func m_decayFunc;
+	func m_releaseFunc;
 };
 
 // # id, lifetime,	repeat, delay,	adsr (can also be inlined)
@@ -145,13 +146,22 @@ public:
 	static const int FOREVER = 0;
 
 public:
-	Animation(int lifetime = FOREVER, int repeat = FOREVER);
+	Animation(int lifetime, int repeat = FOREVER);
 	virtual ~Animation();
 
-	virtual void tick() = 0;
+	virtual void tick();
 	virtual bool done() const;
 
+	// takes ownership of a delay
+	void setDelay(Delay* delay);
+	Delay* delay() const;
+
+	void setADSR(const ADSR& adsr);
+	ADSR adsr() const;
+
 protected:
+
+	virtual void onTick() = 0;
 
 	bool m_done;
 	
@@ -159,45 +169,61 @@ protected:
 	int m_age;
 
 	int m_repeat;
+	int m_plays;
 
 	ADSR m_adsr;
 	Delay* m_delay;
 };
+
+inline
+Delay* Animation::delay() const
+{
+	return m_delay;
+}
+
+inline
+ADSR Animation::adsr() const
+{
+	return m_adsr; 
+}
 
 // # id, func, base,  to,    animation (can also be inlined)
 // { id, enum, color, color, id }
 class ColorAnimation : public Animation
 {
 public:
-
-	// uses ADSR envelope
-	struct Operation
+	enum Type
 	{
-		enum Type
-		{
-			A_COLOR_CONST,
-			A_COLOR_LERP,	// lerps color from 'base' to 'to' via function
-			A_COLOR_FADE,	// fades a color based on function
-			A_COLOR_GREY,	// greys a color based on function
-		};
-
-		Type type;
-		Color base;
-		Color to;
+		A_COLOR_CONST,
+		A_COLOR_GRADIENT,
+		A_COLOR_LERP,	// lerps color from 'base' to 'to' via function
+		A_COLOR_FADE,	// fades a color based on function
+		A_COLOR_GREY,	// greys a color based on function
 	};
 
-	virtual void tick();
+public:
+	ColorAnimation(const Color& base, int lifetime, int repeat = FOREVER);
+	ColorAnimation(const Type& func, const Color& base, const Color& to,
+				   int lifetime, int repeat = FOREVER);
+	ColorAnimation(const Gradient& g, int lifetime, int repeat = FOREVER);
+	ColorAnimation(const Type& func, const Color& base,
+				   int lifetime, int repeat = FOREVER);
+	virtual ~ColorAnimation();
 
 	Color color() const;
 
 protected:
 
-	void set();
+	virtual void onTick();
 
 protected:
 
 	Color m_color;
-	Operation m_operation;
+	Gradient m_gradient;
+
+	Type m_type;
+	Color m_base;
+	Color m_to;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -37,12 +37,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>libnoise\include;libtcod\include;$(IncludePath)</IncludePath>
+    <IncludePath>physfs\include;libnoise\include;libtcod\include;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)build\</OutDir>
     <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>libnoise\include;libtcod\include;$(IncludePath)</IncludePath>
+    <IncludePath>physfs\include;libnoise\include;libtcod\include;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)build\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

@@ -3,8 +3,32 @@
 
 #include <math.h>
 
+Delay::Delay() : m_ready(false), m_count(0), m_delay(1)
+{
+}
 
-PerlinDelay::PerlinDelay() : m_x(0), m_ready(false)
+Delay::~Delay()
+{
+}
+
+bool Delay::tick()
+{
+	m_ready = false;
+	m_count++;
+
+	if (m_count >= m_delay) {
+		reset();
+
+		m_ready = true;
+	}
+
+	return m_ready;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+PerlinDelay::PerlinDelay() : m_x(0)
 {
 	reset();
 }
@@ -18,28 +42,20 @@ void PerlinDelay::reset()
 	m_count = 0;
 }
 
-bool PerlinDelay::tick()
+Delay* PerlinDelay::copy() const
 {
-	m_ready = false;
-	m_count++;
+	PerlinDelay* r = new PerlinDelay();
+	r->m_x = 0;
+	r->m_count = m_count;
+	r->m_delay = m_delay;
+	r->m_ready = m_ready;
 
-	if (m_count >= m_delay) {
-		reset();
-
-		m_ready = true;
-	}
-
-	return m_ready;
-}
-
-bool PerlinDelay::delay() const
-{
-	return !m_ready;
+	return r;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-ConstantDelay::ConstantDelay(int nticks) : m_ready(false)
+ConstantDelay::ConstantDelay(int nticks)
 {
 	m_delay = nticks;
 	reset();
@@ -50,21 +66,11 @@ void ConstantDelay::reset()
 	m_count = 0;
 }
 
-bool ConstantDelay::tick()
+Delay* ConstantDelay::copy() const
 {
-	m_ready = false;
-	m_count++;
+	ConstantDelay* r = new ConstantDelay(m_delay);
+	r->m_count = m_count;
+	r->m_ready = m_ready;
 
-	if (m_count >= m_delay) {
-		reset();
-
-		m_ready = true;
-	}
-
-	return m_ready;
-}
-
-bool ConstantDelay::delay() const
-{
-	return !m_ready;
+	return r;
 }

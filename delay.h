@@ -7,16 +7,26 @@
 class Delay
 {
 public:
+	Delay();
+	virtual ~Delay();
 
 	// returns true if delay triggered
-	virtual bool tick() = 0;
+	bool tick();
 
 	// return true if process should delay
-	virtual bool delay() const {
-		return (m_delay != m_count);
-	}
+	bool delay() const { return !m_ready; }
+
+	// resets count to 0.  This function can be
+	// overwritten to set m_delay as well to give
+	// variable delays
+	virtual void reset() = 0;
+
+	virtual Delay* copy() const = 0;
 
 protected:
+
+	bool m_ready;
+
 	int m_delay;
 	int m_count;
 };
@@ -28,15 +38,13 @@ class PerlinDelay : public Delay
 public:
 	PerlinDelay();
 
-	bool tick();
-	bool delay() const;
+	Delay* copy() const;
 
 protected:
 
 	void reset();
 
 	double m_x;
-	bool m_ready;
 };
 
 class ConstantDelay : public Delay
@@ -44,12 +52,10 @@ class ConstantDelay : public Delay
 public:
 	ConstantDelay(int nticks);
 
-	bool tick();
-	bool delay() const;
+	Delay* copy() const;
+
 protected:
 
 	void reset();
-
-	bool m_ready;
 };
 

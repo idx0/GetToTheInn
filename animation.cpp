@@ -1,5 +1,6 @@
 #include "animation.h"
 
+#if 0
 const int Sprite::FOREVER = 0;
 
 Sprite::Sprite(const Point& pos, unsigned int repeat) :
@@ -173,36 +174,37 @@ void PhantomWall::interact()
 		m_currentFrame = m_frames.begin();
 	}
 }
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
-ADSR::ADSR(float amp, transform_func f)
+ADSR::ADSR(float amp, func f)
 {
 	initialize(amp, 1.0f, 0.0f, 0.0f, 0.0f, f, NULL, NULL);
 }
 
 ADSR::ADSR(float amp, float da, float dd, float ds, float dr,
-		   transform_func ta, transform_func td, transform_func tr)
+		   func ta, func td, func tr)
 {
 	initialize(amp, da, dd, ds, dr, ta, td, tr);
 }
 
-float ADSR::t_linear(float f)
+float ADSR::LINEAR(float f)
 {
 	return f;
 }
 
-float ADSR::t_square(float f)
+float ADSR::SQUARE(float f)
 {
 	return FSQR(f);
 }
 
-float ADSR::t_log(float f)
+float ADSR::LOG(float f)
 {
 	return log(1 + 9 * f);
 }
 
-float ADSR::t_sqrt(float f)
+float ADSR::SQRT(float f)
 {
 	return sqrt(f);
 }
@@ -255,7 +257,7 @@ void ADSR::normalize()
 
 void ADSR::initialize(
 	float amp, float da, float dd, float ds, float dr, 
-	transform_func ta, transform_func td, transform_func tr)
+	func ta, func td, func tr)
 {
 	m_amplitude = std::min(1.0f, std::max(0.0f, amp));
 
@@ -303,12 +305,32 @@ void ADSR::initialize(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Animation::Animation() : m_done(false)
+Animation::Animation(int lifetime, int repeat) :
+	m_done(false), m_lifetime(std::min(1, lifetime)), m_age(0),
+	m_repeat(repeat), m_plays(0), m_delay(NULL)
 {
 }
 
 Animation::~Animation()
 {
+	delete m_delay;
+}
+
+void Animation::tick()
+{
+	if ((!m_done) && (m_delay) && (m_delay->tick())) {
+		onTick();
+
+		m_age++;
+		if (m_age >= m_lifetime) {
+			m_age = 0;
+			m_plays++;
+			if ((m_plays > m_repeat) &&
+				(m_repeat != FOREVER)) {
+				m_done = true;
+			}
+		}
+	}
 }
 
 bool Animation::done() const
@@ -316,26 +338,80 @@ bool Animation::done() const
 	return m_done;
 }
 
-void ColorAnimation::tick()
+void Animation::setDelay(Delay* delay)
+{
+	delete m_delay;
+	m_delay = delay;
+}
+
+void Animation::setADSR(const ADSR& adsr)
+{
+	m_adsr = adsr;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+ColorAnimation::ColorAnimation(const Color& base, int lifetime, int repeat) :
+	Animation(lifetime, repeat),
+	m_color(base), m_type(A_COLOR_CONST), m_base(base)
 {
 }
 
-void ColorAnimation::set()
+ColorAnimation::ColorAnimation(const Type& func, const Color& base, const Color& to,
+							   int lifetime, int repeat) :
+	Animation(lifetime, repeat),
+	m_color(base), m_type(func), m_base(base), m_to(to)
 {
-	float r = (float)m_age / (float)m_lifetime;
+	if (func == A_COLOR_GREY) {
+		m_to = base;
+		m_to.greyscale();
+	}
+}
 
-	switch (m_operation.type) {
+ColorAnimation::ColorAnimation(const Type& func, const Color& base,
+							   int lifetime, int repeat) :
+	Animation(lifetime, repeat),
+	m_color(base), m_type(func), m_base(base)
+{
+	if (func == A_COLOR_GREY) {
+		m_to = base;
+		m_to.greyscale();
+	}
+}
+
+ColorAnimation::ColorAnimation(const Gradient& g, int lifetime, int repeat) :
+	Animation(lifetime, repeat),
+	m_gradient(g), m_type(A_COLOR_GRADIENT)
+{
+}
+
+ColorAnimation::~ColorAnimation()
+{
+}
+
+void ColorAnimation::onTick()
+{
+	float r = m_adsr.transform((float)m_age / (float)m_lifetime);
+
+	switch (m_type) {
 	default:
-	case Operation::A_COLOR_CONST: break;
-	case Operation::A_COLOR_LERP:
+	case A_COLOR_CONST: break;
+	case A_COLOR_GRADIENT:
+		m_color = m_gradient.getColor(r);
 		break;
-	case Operation::A_COLOR_FADE:
+	case A_COLOR_LERP:
+		m_color = Color::lerp(m_base, m_to, r);
 		break;
-	case Operation::A_COLOR_GREY:
+	case A_COLOR_FADE:
+		m_color = m_base * r;
+		break;
+	case A_COLOR_GREY:
+		m_color = Color::lerp(m_base, m_to, r);
 		break;
 	}
 }
 
 Color ColorAnimation::color() const
 {
+	return m_color;
 }

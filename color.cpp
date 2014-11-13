@@ -446,3 +446,131 @@ Color operator/(int lhs, const Color& rhs)
 				 lhs / rhs.g(),
 				 lhs / rhs.b());
 }
+
+
+Color gradient(int r)
+{
+	struct GradientPoint
+	{
+		Color c;
+		float r;
+	};
+
+	static GradientPoint* colors;
+	static const int NCOLORS = 4;
+
+	int i0, i1;
+
+	for (int i = 1; i < NCOLORS; i++) {
+		i1 = i;
+		i0 = i - 1;
+
+		if (r < colors[i1].r) {
+			break;
+		}
+	}
+
+	float f = (r - colors[i0].r) / (colors[i1].r - colors[i0].r);
+
+	return Color::lerp(colors[i0].c, colors[i1].c, f);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+Gradient::Gradient(const Color& a, const Color& b)
+{
+	GradientPoint first, last;
+
+	first.m_color = a;
+	first.m_value = 0.0f;
+	last.m_color = b;
+	last.m_value = 1.0f;
+
+	m_points.insert(first);
+	m_points.insert(last);
+}
+
+Gradient::Gradient(const Color& a, const Color& b, const Color& c)
+{
+	GradientPoint first, mid, last;
+
+	first.m_color = a;
+	first.m_value = 0.0f;
+	mid.m_color = b;
+	mid.m_value = 0.5f;
+	last.m_color = c;
+	last.m_value = 1.0f;
+
+	m_points.insert(first);
+	m_points.insert(mid);
+	m_points.insert(last);
+}
+
+Gradient::Gradient(int ncolors, ...)
+{
+	if (ncolors > 0) {
+		va_list vl;
+		va_start(vl, ncolors);
+		float v = 0.0f, inc = 1.0f / (float)(ncolors - 1);
+
+		for (int i = 0; i < ncolors; i++) {
+			GradientPoint p;
+
+			p.m_value = v;
+			p.m_color = va_arg(vl, Color);
+
+			v += inc;
+		}
+
+		va_end(vl);
+	}
+}
+
+Gradient::~Gradient()
+{
+}
+
+void Gradient::addColor(const Color& c, float v)
+{
+	if (v <= 0.0f) return;
+	if (v >= 1.0f) return;
+
+	GradientPoint p;
+	
+	p.m_value = v;
+	p.m_color = c;
+
+	m_points.insert(p);
+}
+
+Color Gradient::getColor(float r) const
+{
+	std::set<GradientPoint>::const_iterator it = m_points.begin();
+
+	if (m_points.size() == 0) return Color(0, 0, 0);
+
+	float lastF = 0.0f;
+	Color lastC = (*it).m_color;
+
+	for (int i = 1; it != m_points.end(); it++, i++) {
+		if (r < (*it).m_value) {
+			float f = (r - lastF) / ((*it).m_value - lastF);
+
+			return Color::lerp(lastC, (*it).m_color, f);
+		}
+
+		lastF = (*it).m_value;
+		lastC = (*it).m_color;
+	}
+
+	return lastC;
+}
+
+Gradient& Gradient::operator=(const Gradient& rhs)
+{
+	if (this != &rhs) {
+		m_points = rhs.m_points;
+	}
+
+	return *this;
+}
