@@ -10,8 +10,8 @@
 
 #include "sys/thread.h"
 
-#include <libtcod.hpp>
-
+#include <libtcod/libtcod.hpp>
+#include <string>
 
 struct Cursor
 {

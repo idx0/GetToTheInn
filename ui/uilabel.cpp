@@ -28,7 +28,7 @@ namespace ui {
 			int space = margin - word.length();
 
 			while (words >> word) {
-				if (space < word.length() + 1) {
+				if (space < (int)word.length() + 1) {
 					wrapped << std::endl << word;
 					space = margin - word.length();
 				} else {
@@ -49,7 +49,7 @@ namespace ui {
 		bool inword = false;
 		int ll = 0;
 
-		for (int i = 0; i < text.length(); i++) {
+		for (int i = 0; i < (int)text.length(); i++) {
 			char c = text.at(i);
 
 			if ((isspace(c)) || (c == '\a')) {

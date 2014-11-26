@@ -241,7 +241,10 @@ void LinearParticle::update()
 
 FlameParticle::FlameParticle(const Point& pos) :
 	LinearParticle(pos, FPS),
-	m_animation(Gradient(4, Color(61, 15, 0), Color::flame, Color::orange, Color::yellow), FPS),
+	m_animation(Gradient(4, Color(61, 15, 0).packed(),
+							Color::flame.packed(),
+							Color::orange.packed(),
+							Color::yellow.packed()), FPS),
 	m_extent(8),
 	m_totalLife(FPS)
 {

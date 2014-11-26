@@ -134,25 +134,27 @@ static void *__linux_callback_wrapper(void *parg)
 {
 	thread *t = (thread *)parg;
 	
-	dpl_thread_once(&_dpl_tls_control, __dpl_tls_init);
-	pthread_setspecific(_dpl_tls, t);
+//	dpl_thread_once(&_dpl_tls_control, __dpl_tls_init);
+//	pthread_setspecific(_dpl_tls, t);
 	
 	if (t) {
 		t->m_thread_id = getpid();
 		t->thread_func();
 	}
+	
+	int result = 0;
 
-	pthread_exit(&m_result);
+	pthread_exit(&result);
 }
 #endif
 
 
 thread::thread(unsigned int flags)
 {
-	int rc = 1;
+//	int rc = 1;
 
 	m_flags = flags;
-	m_result = NULL;
+	m_result = 0;
 		
 #ifdef __EVOLVE_WIN32__
 	m_thread = (HANDLE)-1;
@@ -206,7 +208,8 @@ int thread::once(thread_tls *tls)
 	
 	return 0;
 #else
-	return pthread_once(tls->m_tlsControl, run_once);
+//	return pthread_once(&tls->m_tlsControl, run_once);
+	return 0;
 #endif
 }
 

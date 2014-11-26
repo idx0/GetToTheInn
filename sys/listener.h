@@ -36,7 +36,7 @@ class listener
 {
 public:
 	listener(void *tag);
-	~listener(void);
+	virtual ~listener(void);
 
 	void addListener(
 		const event_type& type,
@@ -58,11 +58,12 @@ public:
 	virtual void notify(const event& e);
 
 protected:
-	typedef struct {
+	struct listener_callback
+	{
 		ptr_listener_func null_listener;
 		object_listener_func obj_listener;
 		data_listener_func data_listener;
-	} listener_callback;
+	};
 
 	struct listener_set
 	{

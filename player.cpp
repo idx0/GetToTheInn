@@ -4,7 +4,7 @@
 void Player::apply_visible(void *map, int x, int y, int dx, int dy, void *src)
 {
 	TheGrid* g = (TheGrid *)map;
-	Player* p = (Player *)src;
+//	Player* p = (Player *)src;
 
 	if ((g) && (g->inbounds(x, y))) {
 		g->at(x, y)->render->discover.flags |= D_SEEN;
@@ -21,7 +21,7 @@ void Player::apply_visible(void *map, int x, int y, int dx, int dy, void *src)
 
 Player::Player(int x, int y) :
 	Object(x, y, '@', TCODColor::white),
-	sight(28), light(14), hearing(20),
+	sight(28), hearing(20), light(14),
 	direction(FOV_EAST)
 {
 	m_light = new Light(x, y, 1.15f, Rnd::between(14,18), Color(255, 255, 171));

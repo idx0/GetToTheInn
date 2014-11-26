@@ -61,6 +61,9 @@ namespace sys {
 	class EStatement
 	{
 	public:
+		EStatement() {}
+		virtual ~EStatement() {}
+
 		// returns the text string for this statement
 		virtual std::string text() const = 0;
 	};
@@ -472,8 +475,8 @@ namespace sys {
 
 		struct EParserContext
 		{
-			int pos;
-			int start;
+			unsigned int pos;
+			unsigned int start;
 
 			unsigned int flags;
 

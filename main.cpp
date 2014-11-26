@@ -6,7 +6,7 @@
 #include "sys/eof_parser.h"
 
 #include <time.h>
-#include <libtcod.hpp>
+#include <libtcod/libtcod.hpp>
 
 int main(int argc, char **argv)
 {

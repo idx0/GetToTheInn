@@ -101,9 +101,6 @@ protected:
 
 	Player* player() { return m_player; }
 
-	bool beam;
-	float beam_angle;
-
 	Map* map() { return m_map; }
 
 	static Engine *e;

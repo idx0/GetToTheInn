@@ -3,6 +3,12 @@
 #include <math.h>
 #include <algorithm>
 
+#define COLOR_RSHIFT	24
+#define COLOR_GSHIFT	16
+#define COLOR_BSHIFT	8
+
+#define COLOR_MASK		0xff
+
 
 // monochrome
 const Color Color::white		(255, 255, 255);
@@ -69,6 +75,13 @@ Color::Color(const TCODColor& tc) : m_red(tc.r), m_green(tc.g), m_blue(tc.b)
 
 Color::Color(const Color& copy) : m_red(copy.r()), m_green(copy.g()), m_blue(copy.b())
 {
+}
+
+Color::Color(unsigned int rgba)
+{
+	m_red 	= (rgba >> COLOR_RSHIFT) & COLOR_MASK;
+	m_green = (rgba >> COLOR_GSHIFT) & COLOR_MASK;
+	m_blue	= (rgba >> COLOR_BSHIFT) & COLOR_MASK;
 }
 
 Color::~Color() {}
@@ -174,6 +187,17 @@ Color& Color::operator/=(float rhs)
 	}
 
 	return *this;
+}
+
+unsigned int Color::packed() const
+{
+	unsigned int ret = 0;
+
+	ret |= (m_red & COLOR_MASK) << COLOR_RSHIFT;
+	ret |= (m_green & COLOR_MASK) << COLOR_GSHIFT;
+	ret |= (m_blue & COLOR_MASK) << COLOR_BSHIFT;
+
+	return ret;
 }
 
 float Color::average() const
@@ -517,7 +541,7 @@ Gradient::Gradient(int ncolors, ...)
 			GradientPoint p;
 
 			p.m_value = v;
-			p.m_color = va_arg(vl, Color);
+			p.m_color = Color(va_arg(vl, unsigned int));
 
 			v += inc;
 		}

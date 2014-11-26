@@ -209,7 +209,7 @@ void RenderThread::drawTruecolor(int x, int y) const
 	Color lc = m_render->get(x, y)->lighting.lightColor;
 	lc.smooth();
 
-	int llevel = (lc.r() + lc.b() + lc.g());
+//	int llevel = (lc.r() + lc.b() + lc.g());
 
 	int icon = m_render->get(x, y)->tile.icon;
 

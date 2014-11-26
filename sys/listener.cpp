@@ -146,7 +146,9 @@ void listener::pop()
 			}
 		}
 
-//		if (success) logger::log("listener: event %s popped", enumstr::stringify(e.getType()).c_str());
+		if (success) {
+//			logger::log("listener: event %s popped", enumstr::stringify(e.getType()).c_str());
+		}
 	}
 	mutex_unlock(&m_mutex);
 }

@@ -5,7 +5,7 @@
 #include <time.h>
 #include <math.h>
 
-#include <noise.h>
+#include <libnoise/noise.h>
 
 #include "util.h"
 
@@ -148,6 +148,7 @@ public:
 	Rnd() {}
 	~Rnd() {}
 
+#if TEST
 	static void test()
 	{
 		FILE *fp;
@@ -166,6 +167,7 @@ public:
 		for (i = 0; i < TEST_MAX; i++) { fprintf(fp, "%f\n", rndg()); }
 		fclose(fp);
 	}
+#endif
 
 private:
 

@@ -3,7 +3,7 @@
 
 #include <math.h>
 
-Delay::Delay() : m_ready(false), m_count(0), m_delay(1)
+Delay::Delay() : m_ready(false), m_delay(1), m_count(0)
 {
 }
 

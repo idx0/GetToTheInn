@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <assert.h>
-#include <libtcod.hpp>
+#include <libtcod/libtcod.hpp>
 
 #include "sys/thread_os.h"
 #include "geometry.h"

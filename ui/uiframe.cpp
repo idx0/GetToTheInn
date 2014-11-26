@@ -1,5 +1,7 @@
 #include "uiframe.h"
 
+#include <algorithm>
+
 namespace ui {
 
 const int frame::m_sFRAME_CHAR[8] = {
@@ -20,7 +22,9 @@ frame::frame(const char *name, unsigned int len,
 		  m_length(len)
 {
 	memset(m_title, 0, 255);
-	memcpy_s(m_title, 255, name, len);
+	len = std::min(255U, len);
+
+	memcpy(m_title, name, len);
 }
 
 frame::frame(frame_type type, widget *parent)

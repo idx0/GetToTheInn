@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdarg.h>
-#include <libtcod.hpp>
+#include <libtcod/libtcod.hpp>
 #include <set>
 
 class Color
@@ -11,6 +11,7 @@ public:
 	Color(int r, int g, int b);
 	Color(const TCODColor& tc);
 	Color(const Color& copy);
+	Color(unsigned int rgba);	// rgba
 
 	~Color();
 
@@ -32,6 +33,8 @@ public:
 	int r() const;
 	int g() const;
 	int b() const;
+
+	unsigned int packed() const;
 
 	// normalizes the color
 	void normalize();

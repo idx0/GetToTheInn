@@ -1,6 +1,6 @@
 #pragma once
 
-#include <libtcod.hpp>
+#include <libtcod/libtcod.hpp>
 
 #include "uiwidget.h"
 

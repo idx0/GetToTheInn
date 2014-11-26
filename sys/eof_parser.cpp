@@ -307,7 +307,7 @@ namespace sys {
 		if (x) {
 			PEValue xv = x->value();
 
-			pg.fromFloat(std::sin(xv.asFloat()));
+			pg.fromFloat(sin(xv.asFloat()));
 		}
 
 		return pg;
@@ -320,7 +320,7 @@ namespace sys {
 		if (x) {
 			PEValue xv = x->value();
 
-			pg.fromFloat(std::cos(xv.asFloat()));
+			pg.fromFloat(cos(xv.asFloat()));
 		}
 
 		return pg;
@@ -333,7 +333,7 @@ namespace sys {
 		if (x) {
 			PEValue xv = x->value();
 
-			pg.fromFloat(std::log10(xv.asFloat()));
+			pg.fromFloat(log10(xv.asFloat()));
 		}
 
 		return pg;
@@ -365,7 +365,7 @@ namespace sys {
 		if (x) {
 			PEValue xv = x->value();
 
-			pg.fromFloat(std::sqrt(xv.asFloat()));
+			pg.fromFloat(sqrt(xv.asFloat()));
 		}
 
 		return pg;
@@ -769,7 +769,7 @@ namespace sys {
 
 	bool EParser::verifyShortString(const std::string& sz)
 	{
-		for (int i = 0; i < sz.length(); i++) {
+		for (int i = 0; i < (int)sz.length(); i++) {
 			if (!isshort(sz.at(i))) return false;
 		}
 
@@ -782,6 +782,7 @@ namespace sys {
 
 	void EParser::parseToken()
 	{
+#if 0
 		unsigned char start = m_contents[m_context.pos];
 
 		// try to determine the type of token we are trying to parse
@@ -791,6 +792,7 @@ namespace sys {
 			unsigned char c = m_contents[m_context.pos];
 
 		}
+#endif
 	}
 
 	void EParser::parseRoot()

@@ -134,7 +134,7 @@ Map::Rule Map::fromString(const std::string& rule)
 	Rule ret;
 
 	// parse
-	for (int i = 0; i < rule.length(); i++) {
+	for (int i = 0; i < (int)rule.length(); i++) {
 		char c = rule.at(i);
 		int z = -1;
 
@@ -158,9 +158,9 @@ Map::Rule Map::fromString(const std::string& rule)
 
 
 Map::Map(int w, int h) :
+	m_width(w), m_height(h),
 	m_grid(w, h),
 	m_staticObjects(w * h, static_cast<Object*>(0)),
-	m_width(w), m_height(h),
 	m_distMap(w, h)
 {
 	// initialize map
@@ -403,7 +403,7 @@ void Map::generateLife(const Rule& rule, float coef, int iter)
 					// born
 					bool born = false;
 
-					for (int b = 0; b < rule.B.size(); b++) {
+					for (int b = 0; b < (int)rule.B.size(); b++) {
 						if (rule.B[b] == c) {
 							born = true;
 							break;
@@ -415,7 +415,7 @@ void Map::generateLife(const Rule& rule, float coef, int iter)
 					// stay
 					bool stay = false;
 
-					for (int s = 0; s < rule.S.size(); s++) {
+					for (int s = 0; s < (int)rule.S.size(); s++) {
 						if (rule.S[s] == c) {
 							stay = true;
 							break;
@@ -537,7 +537,7 @@ void Map::linkRooms(
 #endif
 
 	while (*visited < (nrow * ncol)) {
-		_neighbor dir = (_neighbor)Rnd::between(0, 4);
+		_dir dir = (_dir)Rnd::between(0, 4);
 
 		// dead end? back up the stack
 		if ((rooms[pivot].n[north] != unlinked) &&

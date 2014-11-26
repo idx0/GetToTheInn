@@ -6,7 +6,7 @@
 #include "animation.h"
 
 #include <list>
-#include <libtcod.hpp>
+#include <libtcod/libtcod.hpp>
 
 
 ///////////////////////////////////////////////////////////////////////////////

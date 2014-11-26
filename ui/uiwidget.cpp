@@ -29,7 +29,7 @@ void canvas::drawText(const Rect& bounds, const std::string& sz, const Color& fg
 	int i = 0, j = 0;
 	int cnt = 0;
 	
-	while (cnt < sz.length()) {
+	while (cnt < w) {
 		int c = sz[cnt];
 
 		if (c == '\n') {
@@ -111,9 +111,9 @@ void action::draw(canvas *console, const Point& tl)
 ///////////////////////////////////////////////////////////////////////////////
 
 widget::widget(widget *parent) :
-	m_parent(parent),
+	m_visible(true),
 	m_child(NULL),
-	m_visible(true)
+	m_parent(parent)
 {
 }
 

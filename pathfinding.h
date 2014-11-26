@@ -4,12 +4,16 @@
 #include "common.h"
 #include "util.h"
 
-#include <libtcod.hpp>
+#include <libtcod/libtcod.hpp>
 #include <queue>
 #include <unordered_map>
 
-struct PriorityQueue
+class PriorityQueue
 {
+public:
+	PriorityQueue() {}
+	~PriorityQueue() {}
+
 	struct Location {
 		int x, y;
 
@@ -47,19 +51,7 @@ struct PriorityQueue
 	};
 
 	template <class T> class LocationHash;
-
-	template<> class LocationHash<PriorityQueue::Location>
-	{
-	public:
-		std::size_t operator()(PriorityQueue::Location const& s) const
-		{
-			std::size_t hx = std::hash<int>()(s.x);
-			std::size_t hy = std::hash<int>()(s.y);
-
-			return hx ^ (hy << 1);
-		}
-	};
-
+	
 	typedef std::unordered_map<Location,
 							   PriorityQueue::Location,
 							   LocationHash<Location>> ParentMap;
@@ -97,6 +89,19 @@ struct PriorityQueue
 		return best;
 	}
 };
+
+template<> class PriorityQueue::LocationHash<PriorityQueue::Location>
+{
+public:
+	std::size_t operator()(PriorityQueue::Location const& s) const
+	{
+		std::size_t hx = std::hash<int>()(s.x);
+		std::size_t hy = std::hash<int>()(s.y);
+
+		return hx ^ (hy << 1);
+	}
+};
+
 
 class Pathfinder : public Utils::Singleton<Pathfinder>
 {

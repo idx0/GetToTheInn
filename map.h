@@ -1,6 +1,6 @@
 #pragma once
 
-#include <libtcod.hpp>
+#include <libtcod/libtcod.hpp>
 
 #include "geometry.h"
 #include "fov/fov.h"
@@ -10,6 +10,7 @@
 
 #include <string>
 #include <vector>
+#include <stdio.h>
 
 #define HP_UNKNOWN		-1
 #define HP_DEAD			-2

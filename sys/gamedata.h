@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #include "token.h"
 
 namespace sys

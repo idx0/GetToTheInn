@@ -44,7 +44,7 @@ void gamedata::copy_after(unsigned char **dest, size_t *destlen,
 {
 	size_t m = 0;
 
-	if (*destlen != NULL) {
+	if (destlen != NULL) {
 		m = (*destlen < srclen ? *destlen : srclen);
 
 		if ((src != NULL) && (dest != NULL)) {

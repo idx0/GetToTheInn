@@ -40,16 +40,21 @@ enum event_type
 	EVENT_CUSTOM = (EVENT_LAST + 1)
 };
 
-typedef union {
+union event_payload
+{
 	void *ptr;
 	token_id token;
 
-	struct _data {
+	struct _data
+	{
 		unsigned short param1;
 		unsigned short param2;
 		unsigned int flags;
-	} data;
-} event_payload;
+	};
+
+	_data data;
+
+};
 
 class event
 {

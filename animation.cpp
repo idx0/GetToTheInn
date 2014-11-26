@@ -1,4 +1,5 @@
 #include "animation.h"
+#include <math.h>
 
 #if 0
 const int Sprite::FOREVER = 0;
@@ -240,7 +241,7 @@ float ADSR::transform(float r) const
 		return m_amplitude;
 	} else {
 		float rr = (r - (1.0f - m_duration[3])) / m_duration[3];
-		return m_amplitude * (1 - m_releaseFunc(r));
+		return m_amplitude * (1 - m_releaseFunc(rr));
 	}
 }
 

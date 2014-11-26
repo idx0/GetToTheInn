@@ -86,7 +86,9 @@ protected:
 #else
 	pthread_t m_thread;
 	pthread_attr_t m_thread_attr;
+public:
 	pid_t m_thread_id;
+protected:
 #endif
 	thread_caller_func m_function;
 

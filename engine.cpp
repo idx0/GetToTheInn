@@ -8,7 +8,7 @@
 #include "sys/logger.h"
 
 #include <sstream>
-#include <libtcod.hpp>
+#include <libtcod/libtcod.hpp>
 
 struct _mouse
 {
@@ -158,7 +158,6 @@ Engine *Engine::e = static_cast<Engine*>(0);
 
 Engine::Engine() :
 	m_mode(MODE_MOVE),
-	beam(false), beam_angle(140.0f),
 	m_updateNeeded(true), m_quit(false)
 {
 	TCODConsole::setCustomFont("font.png", TCOD_FONT_LAYOUT_ASCII_INROW);
