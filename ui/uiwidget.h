@@ -6,7 +6,7 @@
 #include "../key.h"
 #include "../common.h"
 
-#include <libtcod/libtcod.hpp>
+#include "../libtcod/libtcod.hpp"
 #include <vector>
 #include <set>
 

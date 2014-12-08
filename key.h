@@ -1,6 +1,6 @@
 #pragma once
 
-#include <libtcod/console_types.h>
+#include "libtcod/console_types.h"
 #include <string>
 #include <string.h>
 #include <ctype.h>

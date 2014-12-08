@@ -1,6 +1,6 @@
 #include "uimenuitem.h"
 
-#include <libtcod/libtcod.hpp>
+#include "../libtcod/libtcod.hpp"
 
 namespace ui {
 

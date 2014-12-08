@@ -7,8 +7,8 @@
 #include "sys/eventqueue.h"
 #include "sys/logger.h"
 
+#include "libtcod/libtcod.hpp"
 #include <sstream>
-#include <libtcod/libtcod.hpp>
 
 struct _mouse
 {

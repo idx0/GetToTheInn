@@ -5,7 +5,7 @@
 #include <time.h>
 #include <math.h>
 
-#include <libnoise/noise.h>
+#include "libnoise/noise.h"
 
 #include "util.h"
 

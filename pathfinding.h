@@ -4,9 +4,11 @@
 #include "common.h"
 #include "util.h"
 
-#include <libtcod/libtcod.hpp>
+#include "libtcod/libtcod.hpp"
 #include <queue>
 #include <unordered_map>
+#include <algorithm>
+#include <functional>
 
 class PriorityQueue
 {

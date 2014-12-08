@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "uiwidget.h"
 
 namespace ui {

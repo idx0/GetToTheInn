@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "lighting.h"
 
 #include "sys/logger.h"

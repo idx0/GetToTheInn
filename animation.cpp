@@ -1,5 +1,7 @@
-#include "animation.h"
+#include <algorithm>
 #include <math.h>
+
+#include "animation.h"
 
 #if 0
 const int Sprite::FOREVER = 0;

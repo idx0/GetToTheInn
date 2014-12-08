@@ -40,7 +40,9 @@ namespace sys {
 			E_BITFIELD,
 			E_TIME,
 			E_BOOL,
-			E_ENUM
+			E_ENUM,
+
+			NUM_TOKENS
 		};
 
 	public:
@@ -454,6 +456,16 @@ namespace sys {
 		bool verifyShortString(const std::string& sz);
 
 		static unsigned char specialEscape(unsigned char c);
+
+		typedef pEToken (*ParseAsFunc)(const std::string&);
+
+		// ParseAsFunc for time - uses iso8601
+		static pEToken parseAsIso8601(const std::string& token);
+
+		// returns the digit in token as val, returning true if the token
+		// could be parsed as a digit
+//		bool parseDigit(const std::string& token, PEValue* val);
+
 
 	protected:
 

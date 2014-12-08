@@ -6,6 +6,13 @@
 #include <sstream>
 #include <list>
 
+#ifdef __EVOLVE_WIN32__
+#include <iomanip>
+#else
+#define _GNU_SOURCE
+#include <time.h>
+#endif
+
 namespace sys {
 	namespace eof {
 
@@ -793,6 +800,32 @@ namespace sys {
 
 		}
 #endif
+		// we want to parse each definition and split it into parts delimited by ','.
+		// we need to be mindful of quoted strings and nested defintions.  remember
+		// that we already have the definition as it is with extra whitespace removed.
+		// once split, we try to guess the type from a set of known values.
+
+		// shortstring : ([A-Za-z0-9_]*)
+		//       digit : ([0-9]*(\.[0-9]*)?)
+		//         hex : (0x[0-9A-Fa-f]+)
+		//     iso8601 : ((-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[0-1]|0[1-9]|[1-2][0-9])T(2[0-3]|[0-1][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?(Z|[+-](?:2[0-3]|[0-1][0-9]):[0-5][0-9])?)
+
+		//     NULL : (NULL|[-])
+		//       id : shortstring
+		//    color : (\(digit,digit,digit\))
+		//    value : (([+-])?digit|hex)
+		//  boolean : (true|false)
+		//   string : quoted string
+		// bitfield : (hex|[01]{1-32})
+		//     time : iso8601
+		//     enum : shortstring
+
+		// builtins :
+		//     math : ADD, MULT, DIV, SUB, SIN, COS, LOG, SQR, SQRT
+		//   random : RAND, RNDG, RNDN, RRNG, ROLL, PRLN
+		// constant : E, PI
+
+		
 	}
 
 	void EParser::parseRoot()
@@ -831,6 +864,62 @@ namespace sys {
 			// parse error - dangling statement
 			printf("syntax error: one or more statements is left open\n");
 		}
+	}
+
+	pEToken EParser::parseAsIso8601(const std::string& token)
+	{
+		static const char *formats[] = {
+			"%Y",
+			"%Y-%m",
+			"%y-%m",
+			"%Y-%m-%d",
+			"%y-%m-%d",
+			"%Y%m%d",
+			"%y%m%d",
+			"%Y-%m-%d%T",
+			"%y-%m-%d%T",
+			"%Y%m%d%H%M%S",
+			"%y%m%d%H%M%S",
+			"%Y-%m-%dT%T",
+			"%y-%m-%dT%T",
+			"%Y-%m-%dT%TZ",
+			"%y-%m-%dT%TZ",
+			"%Y-%m-%d%TZ",
+			"%y-%m-%d%TZ",
+			"%Y%m%dT%TZ",
+			"%y%m%dT%TZ",
+			"%Y%m%d%TZ",
+			"%y%m%d%TZ"
+		};
+
+		static const int sFMT_LEN = sizeof(formats) / sizeof(char*);
+
+		time_t t;
+		bool converted = false;
+
+		for (int i = 0; i < sFMT_LEN; i++) {
+#ifdef __EVOLVE_WIN32__
+			std::tm tmb;
+			std::istringstream ss(token);
+			ss >> std::get_time(&tmb, formats[i]);
+
+			if (!ss.fail()) {
+				tmb.tm_isdst = -1;
+				t = mktime(&tmb);
+				converted = true;
+			}
+#else
+			struct tm tmb;
+
+			if (strptime(token.c_str(), formats[i], &tmb) != NULL) {
+				tmb.tm_isdst = -1;
+				t = mktime(&tmb);
+				converted = true;
+			}
+#endif
+		}
+
+		return static_cast<pEToken>(0);
 	}
 
 	///////////////////////////////////////////////////////////////////////////

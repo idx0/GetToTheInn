@@ -1,7 +1,8 @@
 #pragma once
 
+#include "libtcod/libtcod.hpp"
+
 #include <stdarg.h>
-#include <libtcod/libtcod.hpp>
 #include <set>
 
 class Color

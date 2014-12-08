@@ -1,6 +1,6 @@
 #pragma once
 
-#include <libtcod/libtcod.hpp>
+#include "libtcod/libtcod.hpp"
 
 #include "geometry.h"
 #include "fov/fov.h"
