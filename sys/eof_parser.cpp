@@ -546,7 +546,7 @@ namespace sys {
 	void EShortString::assign(const std::string& sz)
 	{
 		clear();
-		unsigned int len = std::min(sz.length(), sSHORT_STRING_LEN);
+		unsigned int len = std::min(sz.length(), EOF_SHORTSTRING_LEN);
 
 		for (unsigned int i = 0; i < len; i++) {
 			char c = sz.at(i);
@@ -559,7 +559,7 @@ namespace sys {
 	void EShortString::assign(const char* sz)
 	{
 		clear();
-		unsigned int len = std::min(strlen(sz), sSHORT_STRING_LEN);
+		unsigned int len = std::min(strlen(sz), EOF_SHORTSTRING_LEN);
 
 		for (unsigned int i = 0; i < len; i++) {
 			char c = sz[i];
@@ -577,7 +577,7 @@ namespace sys {
 	void EShortString::assign(char c, unsigned int n)
 	{
 		clear();
-		m_length = std::min(n, sSHORT_STRING_LEN);
+		m_length = std::min(n, EOF_SHORTSTRING_LEN);
 
 		if (isshort(c)) {
 			for (unsigned int i = 0; i < m_length; i++) {
@@ -588,7 +588,7 @@ namespace sys {
 
 	void EShortString::clear()
 	{
-		memset(m_string, 0, sSHORT_STRING_LEN + 1);
+		memset(m_string, 0, EOF_SHORTSTRING_LEN + 1);
 		m_length = 0;
 	}
 
@@ -599,7 +599,7 @@ namespace sys {
 
 	EShortString& EShortString::operator+=(const EShortString& rhs)
 	{
-		unsigned int len = std::min(rhs.length(), sSHORT_STRING_LEN - m_length);
+		unsigned int len = std::min(rhs.length(), EOF_SHORTSTRING_LEN - m_length);
 
 		for (unsigned int i = 0; i < len; i++) {
 			m_string[m_length + i] = rhs.at(i);
@@ -612,7 +612,7 @@ namespace sys {
 
 	EShortString& EShortString::operator+=(char rhs)
 	{
-		if (m_length < sSHORT_STRING_LEN) {
+		if (m_length < EOF_SHORTSTRING_LEN) {
 			m_string[m_length++] = rhs;
 		}
 
@@ -999,7 +999,7 @@ namespace sys {
 
 				return new EBitField(bf);
 			}
-		} else if ((val.length() > 0) && (val.length() <= 32)) {
+		} else if ((val.length() >= 8) && (val.length() <= 32)) {
 			bf = 0;
 
 			// parse as 0 or 1
@@ -1065,7 +1065,11 @@ namespace sys {
 					}
 
 					if (!found) {
-						values.push_front(parseLiteral(buf));
+						EValue* pl = parseLiteral(buf);
+
+						if (pl) {
+							values.push_front(pl);
+						}
 					}
 
 					buf.clear();
@@ -1172,16 +1176,16 @@ namespace sys {
 
 			if (hex) {
 				// hex value
-				sscanf_s(val.c_str(), "%x", &u);
-				return new EValueInt((int)u);
+				int n = sscanf_s(val.c_str(), "%x", &u);
+				if (n == 1) return new EValueInt((int)u);
 			} else if (val.find('.') == std::string::npos) {
 				// int
-				sscanf_s(val.c_str(), "%d", &s);
-				return new EValueInt(s);
+				int n = sscanf_s(val.c_str(), "%d", &s);
+				if (n == 1) return new EValueInt(s);
 			} else {
 				// float
-				sscanf_s(val.c_str(), "%f", &f);
-				return new EValueFloat(f);
+				int n = sscanf_s(val.c_str(), "%f", &f);
+				if (n == 1) return new EValueFloat(f);
 			}
 		}
 
@@ -1274,7 +1278,8 @@ namespace sys {
 						ptrs.push_back(new EBoolean(false));
 						tokens.push_back(sFALSE);
 					} else if ((buf.length() == 1) && (buf.at(0) == EOF_NULL_CHAR)) {
-						// just push a NULL token, but don't push the string
+						// just push a NULL token
+						tokens.push_back(buf);
 						ptrs.push_back(new EToken());
 					} else if ((tok = parseAsIso8601(buf)) != static_cast<pEToken>(0)) {
 						ptrs.push_back(tok);
@@ -1297,6 +1302,13 @@ namespace sys {
 							if (bf) {
 								printf("bf := 0x%08x\n", bf->value());
 							}
+						} else if ((vt = parseValue(buf)) != static_cast<pEToken>(0)) {
+							ptrs.push_back(vt);
+
+							EValue* vp = dynamic_cast<EValue*>(vt);
+							if (vp) {
+								printf("val := %f\n", vp->value().asFloat());
+							}
 						} else if (verifyShortString(buf)) {
 							// id or enum - we will assume that the first shortstring
 							// is an id, and all the rest are enum values
@@ -1307,13 +1319,8 @@ namespace sys {
 								ptrs.push_back(new EEnum(EShortString(buf)));
 							}
 						} else {
-							vt = parseValue(buf);
-							ptrs.push_back(vt);
-
-							EValue* vp = dynamic_cast<EValue*>(vt);
-							if (vp) {
-								printf("val := %f\n", vp->value().asFloat());
-							}
+							printf("error: unknown or unrecognized type `%s'", buf.c_str());
+							ptrs.push_back(new EToken);
 						}
 
 						tokens.push_back(buf);

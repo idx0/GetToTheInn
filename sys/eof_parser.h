@@ -16,13 +16,12 @@
 
 #define EOF_DOUBLE_QUOTE	'"'
 #define EOF_SINGLE_QUOTE	'\''
-
 #define EOF_ESCAPE_CHAR		'\\'
 #define EOF_COMMENT_CHAR	'#'
 
 #define EOF_NULL_CHAR		'-'
 #define EOF_END_OF_STR		'\0'
-
+#define EOF_SHORTSTRING_LEN 127U
 
 #define EOF_DEFN_DEPTH		16		// max number of nested definitions
 #define EOF_FUNC_DEPTH		32		// max number of nested functions
@@ -117,7 +116,7 @@ namespace sys {
 		EShortString(const std::string& sz);
 		EShortString(const char* sz);
 
-		virtual ~EShortString();
+		~EShortString();
 
 		// returns this string as a const char*
 		const char* str() const;
@@ -165,11 +164,9 @@ namespace sys {
 		static bool isshort(unsigned char c);
 
 	protected:
+		char m_string[EOF_SHORTSTRING_LEN + 1];
 
 		unsigned int m_length;
-		static const unsigned int sSHORT_STRING_LEN = 127;
-
-		char m_string[sSHORT_STRING_LEN + 1];
 	};
 
 
@@ -381,6 +378,11 @@ namespace sys {
 
 		unsigned int size() const;
 
+		const EValue* at(unsigned int i) const;
+		EValue* operator[](unsigned int i);
+
+		EField& operator=(const EField& rhs);
+
 		// clear, empty
 		void clear();
 		bool empty() const;
@@ -394,6 +396,8 @@ namespace sys {
 		// performs func on each value
 		void each(EValueFuncOneArg* func);
 		void each(pEValueFuncOneArg func);
+
+
 	};
 
 	///////////////////////////////////////////////////////////////////////////

@@ -47,4 +47,5 @@ char *_strptime(const char *buf, const char *fmt, struct tm *tm);
 #include <strings.h>
 #define _aligned_alloc(x, y)	aligned_alloc(y, x)
 #define _aligned_free(x)		free(x)
+#define sscanf_s(x, y, z)		sscanf(x, y, z)
 #endif
