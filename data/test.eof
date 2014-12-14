@@ -1,0 +1,12 @@
+[version:1.0]
+[author:index_zero]
+[content:tests]
+[meta:this is a test.\n:\\\#\]_AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz 0123456789 \'\"\ns p a c e\tt e s t]
+[meta:]
+[:]{
+	id, value, value, value, field, string, bitfield, time, bool
+}
+# start definition unit tests
+{ test_one, -0.5233, 0x2eff55, ADD(10, ROLL(2,6)), (46, 255, 85),
+	"this is a test.\n:\\\#\]_AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz 0123456789 \'\"\ns p a c e\tt e s t",
+	00101010010101101, 2014-12-13T10:01:42, false }

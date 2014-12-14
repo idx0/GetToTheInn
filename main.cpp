@@ -9,16 +9,22 @@
 
 #include "libtcod/libtcod.hpp"
 
+#define TEST
+
 int main(int argc, char **argv)
 {
 	sys::logger::createLogger("gtti.log");
 	sys::eventqueue::createEventQueue();
 
 	Rnd::seed(time(NULL));
+
+#ifndef TEST
 	Engine::init();
-
+#else
 	sys::eof::PETest();
+#endif
 
+#ifndef TEST
 	while ((!Engine::quit()) && 
 		   (!TCODConsole::isWindowClosed())) {
 		Engine::checkForInput();
@@ -35,6 +41,7 @@ int main(int argc, char **argv)
 	}
 
 	Engine::final();
+#endif
 
 	return 0;
 }

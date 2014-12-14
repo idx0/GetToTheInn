@@ -20,6 +20,18 @@
 #define EOF_ESCAPE_CHAR		'\\'
 #define EOF_COMMENT_CHAR	'#'
 
+#define EOF_NULL_CHAR		'-'
+#define EOF_END_OF_STR		'\0'
+
+
+#define EOF_DEFN_DEPTH		16		// max number of nested definitions
+#define EOF_FUNC_DEPTH		32		// max number of nested functions
+
+#define EOF_VERSION			"0.7"
+
+//							256 Mb
+#define EOF_PARSER_FILEMAX	268435456
+
 namespace sys {
 	namespace eof {
 	// Evolve Object Format
@@ -35,7 +47,8 @@ namespace sys {
 			E_NULL = 0,
 			E_ID,
 			E_VALUE,
-			E_COLOR,
+			E_FIELD,
+			E_DEFN,
 			E_STRING,
 			E_BITFIELD,
 			E_TIME,
@@ -50,6 +63,8 @@ namespace sys {
 		EToken(const Type& type) : m_type(type) {}
 
 		virtual ~EToken() {}
+
+		Type type() const { return m_type;  }
 
 		static const std::string TYPE_NAMES[];
 
@@ -91,6 +106,72 @@ namespace sys {
 		virtual std::string text() const = 0;
 	};
 
+	///////////////////////////////////////////////////////////////////////////
+	// EOF ShortString														 //
+	///////////////////////////////////////////////////////////////////////////
+
+	class EShortString
+	{
+	public:
+		EShortString();
+		EShortString(const std::string& sz);
+		EShortString(const char* sz);
+
+		virtual ~EShortString();
+
+		// returns this string as a const char*
+		const char* str() const;
+
+		// returns the length of this short string
+		unsigned int length() const;
+
+		EShortString& operator=(const EShortString& rhs);
+
+		// calls compare()
+		bool operator==(const EShortString& rhs) const;
+
+		// lexicographical less than
+		bool operator<(const EShortString &rhs) const;
+
+		// compares this short string to the given string based on the
+		// given case sensitivity.  true is returned if they are equal
+		bool compare(const std::string& sz, bool caseSensitive = true) const;
+		bool compare(const char* sz, bool caseSensitive = true) const;
+		bool compare(const EShortString& sz, bool caseSensitive = true) const;
+		bool compare(char c, bool caseSensitive = true) const;
+
+		// assigns this short string to the given value
+		void assign(const std::string& sz);
+		void assign(const char* sz);
+		void assign(const EShortString& sz);
+		void assign(char c, unsigned int n = 1);	// fill
+
+		// clear, empty
+		void clear();
+		bool empty() const;
+
+		// adds a short string or a char to the end of this short string
+		// if able
+		EShortString& operator+=(const EShortString& rhs);
+		EShortString& operator+=(char rhs);
+
+		// bracket operator
+		char& operator[](int n);
+		const char& operator[](int n) const;
+
+		// at
+		char at(int n) const;
+
+		static bool isshort(unsigned char c);
+
+	protected:
+
+		unsigned int m_length;
+		static const unsigned int sSHORT_STRING_LEN = 127;
+
+		char m_string[sSHORT_STRING_LEN + 1];
+	};
+
 
 	///////////////////////////////////////////////////////////////////////////
 	// EOF Value Properties													 //
@@ -114,6 +195,16 @@ namespace sys {
 		float asFloat() const;
 		void fromInt(int i);
 		void fromFloat(float f);
+
+		_PEValue operator=(const _PEValue& rhs)
+		{
+			if (this != &rhs) {
+				t = rhs.t;
+				u = rhs.u;
+			}
+
+			return *this;
+		}
 	};
 
 	typedef _PEValue PEValue;
@@ -125,6 +216,7 @@ namespace sys {
 		EValue() : EToken(E_VALUE) {}
 		virtual ~EValue() {}
 
+		virtual EValue* copy() = 0;
 		virtual PEValue value() = 0;
 	};
 
@@ -139,10 +231,9 @@ namespace sys {
 		virtual ~EValueFloat();
 
 		void set(float f);
-		virtual PEValue value();
 
-		static const EValueFloat PI;
-		static const EValueFloat E;
+		virtual EValue* copy();
+		virtual PEValue value();
 
 	protected:
 
@@ -165,6 +256,8 @@ namespace sys {
 		virtual ~EValueInt();
 
 		void set(int i);
+
+		virtual EValue* copy();
 		virtual PEValue value();
 
 	protected:
@@ -185,14 +278,6 @@ namespace sys {
 	typedef PEValue (*pEValueFuncOneArg)(EValue*);
 	typedef PEValue (*pEValueFuncTwoArgs)(EValue*, EValue*);
 
-	struct FunctionTable
-	{
-		std::string			name;
-		pEValueFuncNoArgs	func0;
-		pEValueFuncOneArg	func1;
-		pEValueFuncTwoArgs	func2;
-	};
-
 	///////////////////////////////////////////////////////////////////////////
 	// EOF Value function base class
 
@@ -200,17 +285,27 @@ namespace sys {
 	{
 	public:
 		explicit EValueFunc();
-		virtual ~EValueFunc() {}
+		virtual ~EValueFunc();
 
 		virtual PEValue value() = 0;
+		virtual PEValue value(EValue* v1, EValue* v2) = 0;
+		virtual void args(EValue* v1 = static_cast<EValue*>(0), EValue* v2 = static_cast<EValue*>(0));
 
-		static const FunctionTable FuncTable[];
+		virtual EValue* copy() = 0;
+		virtual int nArgs() const = 0;
 
 	protected:
 
 		EValue* m_param1;
 		EValue* m_param2;
 	};
+
+	inline
+	void EValueFunc::args(EValue* v1, EValue* v2)
+	{
+		m_param1 = v1;
+		m_param2 = v2;
+	}
 
 	///////////////////////////////////////////////////////////////////////////
 	// EOF Value function taking no Value arguments
@@ -222,6 +317,10 @@ namespace sys {
 		virtual ~EValueFuncNoArgs() {}
 
 		virtual PEValue value();
+		virtual PEValue value(EValue* v1, EValue* v2);
+
+		virtual EValue* copy();
+		virtual int nArgs() const;
 
 	protected:
 
@@ -234,10 +333,15 @@ namespace sys {
 	class EValueFuncOneArg : public EValueFunc
 	{
 	public:
+		EValueFuncOneArg(pEValueFuncOneArg func);
 		EValueFuncOneArg(pEValueFuncOneArg func, EValue* param);
 		virtual ~EValueFuncOneArg() {}
 
 		virtual PEValue value();
+		virtual PEValue value(EValue* v1, EValue* v2);
+
+		virtual EValue* copy();
+		virtual int nArgs() const;
 
 	protected:
 
@@ -250,10 +354,15 @@ namespace sys {
 	class EValueFuncTwoArgs : public EValueFunc
 	{
 	public:
+		EValueFuncTwoArgs(pEValueFuncTwoArgs func);
 		EValueFuncTwoArgs(pEValueFuncTwoArgs func, EValue* p1, EValue* p2);
 		virtual ~EValueFuncTwoArgs() {}
 
 		virtual PEValue value();
+		virtual PEValue value(EValue* v1, EValue* v2);
+
+		virtual EValue* copy();
+		virtual int nArgs() const;
 
 	protected:
 
@@ -261,35 +370,51 @@ namespace sys {
 	};
 
 	///////////////////////////////////////////////////////////////////////////
-	// EOF Value Function Declairations
 
-	// Random
-	static PEValue func_random_rand();
-	static PEValue func_random_rndn();
-	static PEValue func_random_rndg();
-	static PEValue func_random_range(EValue* a, EValue *b);
-	static PEValue func_random_roll(EValue* a, EValue *b);
-	static PEValue func_random_perlin(EValue *x);
+	///////////////////////////////////////////////////////////////////////////
+	// EOF Field															 //
+	///////////////////////////////////////////////////////////////////////////
 
-	// Math
-	static PEValue func_math_add(EValue* a, EValue *b);
-	static PEValue func_math_mult(EValue* a, EValue *b);
-	static PEValue func_math_div(EValue* a, EValue *b);
-	static PEValue func_math_sub(EValue* a, EValue *b);
-	static PEValue func_math_sin(EValue* x);
-	static PEValue func_math_cos(EValue* x);
-	static PEValue func_math_log(EValue* x);
-	static PEValue func_math_sqr(EValue* x);
-	static PEValue func_math_sqrt(EValue* x);
+	class EField
+	{
+	public:
+
+		unsigned int size() const;
+
+		// clear, empty
+		void clear();
+		bool empty() const;
+		
+		// randomize field values
+		void shuffle();
+
+		// sums field values
+		PEValue sum() const;
+
+		// performs func on each value
+		void each(EValueFuncOneArg* func);
+		void each(pEValueFuncOneArg func);
+	};
+
+	///////////////////////////////////////////////////////////////////////////
+	// EOF Generator Token Properties										 //
+	///////////////////////////////////////////////////////////////////////////
+
+	class EGeneratorToken : public EToken
+	{
+	public:
+		EGeneratorToken() : EToken(E_DEFN) {}
+		virtual ~EGeneratorToken() {}
+	};
 
 	///////////////////////////////////////////////////////////////////////////
 	// EOF Color Properties													 //
 	///////////////////////////////////////////////////////////////////////////
 
-	class EColor : public EToken
+	class EColor : public EGeneratorToken
 	{
 	public:
-		EColor() : EToken(E_COLOR) {}
+		EColor() : EGeneratorToken() {}
 		virtual ~EColor() {}
 
 		virtual Color value() = 0;
@@ -297,7 +422,8 @@ namespace sys {
 
 	class EColorConst : public EColor
 	{
-
+	public:
+		// {value,value,value}|enum
 		virtual Color value();
 
 	protected:
@@ -308,6 +434,9 @@ namespace sys {
 	class EColorDynamic : public EColor
 	{
 	public:
+		// {function,color,color,value}
+		// function: LERP|DARK|DSAT|MULT|AUGM|SMTH|GLIT|GLUM|GAVE
+		// color: EColorConst|EColorDynamic
 		enum Function
 		{
 			E_COLOR_NONE = 0,
@@ -352,6 +481,113 @@ namespace sys {
 	protected:
 
 		std::string m_string;
+	};
+
+	///////////////////////////////////////////////////////////////////////////
+	// EOF Boolean Properties												 //
+	///////////////////////////////////////////////////////////////////////////
+
+	class EBoolean : public EToken
+	{
+	public:
+		EBoolean(bool b = false);
+		virtual ~EBoolean();
+
+		virtual bool value();
+
+	protected:
+		bool m_bool;
+	};
+
+	///////////////////////////////////////////////////////////////////////////
+	// EOF Time Properties													 //
+	///////////////////////////////////////////////////////////////////////////
+
+	class ETime : public EToken
+	{
+	public:
+		ETime();
+		ETime(time_t t);
+		virtual ~ETime();
+
+		virtual time_t value();
+	protected:
+
+		time_t m_time;
+	};
+
+	///////////////////////////////////////////////////////////////////////////
+	// EOF Bitfield Properties												 //
+	///////////////////////////////////////////////////////////////////////////
+
+	class EBitField : public EToken
+	{
+	public:
+		EBitField();
+		EBitField(unsigned int field);
+		virtual ~EBitField();
+
+		virtual unsigned int value();
+
+		void set(unsigned int bit);
+		bool isSet(unsigned int bit) const;
+
+		static const unsigned int BIT_MAX;
+	protected:
+
+		unsigned int m_field;
+	};
+
+	///////////////////////////////////////////////////////////////////////////
+	// EOF Field Token Properties											 //
+	///////////////////////////////////////////////////////////////////////////
+
+	class EFieldToken : public EToken
+	{
+	public:
+		EFieldToken() : EToken(E_FIELD) {}
+
+		virtual ~EFieldToken() {}
+
+		void addField(const PEValue& v) {}
+	};
+
+	///////////////////////////////////////////////////////////////////////////
+	// EOF ShortToken Properties											 //
+	///////////////////////////////////////////////////////////////////////////
+
+	class EShortToken : public EToken
+	{
+	public:
+		EShortToken(const EShortString& sz, const Type& type) : EToken(type), m_string(sz) {}
+		virtual ~EShortToken() {}
+
+		EShortString value();
+
+	protected:
+
+		EShortString m_string;
+	};
+
+	inline
+	EShortString EShortToken::value()
+	{
+		return m_string;
+	}
+	
+
+	class EEnum : public EShortToken
+	{
+	public:
+		EEnum(const EShortString& sz) : EShortToken(sz, E_ENUM) {}
+		virtual ~EEnum() {}
+	};
+
+	class EId : public EShortToken
+	{
+	public:
+		EId(const EShortString& sz) : EShortToken(sz, E_ID) {}
+		virtual ~EId() {}
 	};
 
 	///////////////////////////////////////////////////////////////////////////
@@ -432,6 +668,7 @@ namespace sys {
 	class EParser
 	{
 	public:
+		EParser(const std::string& sz);
 		EParser(const char* filename);
 		~EParser();
 
@@ -441,19 +678,24 @@ namespace sys {
 		// delimiters).
 		void parseRoot();
 
-		static bool isshort(unsigned char c);
+		static bool ishex(unsigned char c);
+		static bool isbinary(unsigned char c);
 
 	protected:
 
 		pEStatement parseDecl();
 		pEStatement parseDefn();
 
-		std::string parseQuote();
-		void parseField();
+		std::string parseQuote(bool keepslashes = false);
+		pEToken parseField();
 
-		void parseToken();
+		void parseTokens(const std::string& defn);
+		EValue* parseLiteral(const std::string& val) const;
+		pEToken parseValue(const std::string& val);
 
-		bool verifyShortString(const std::string& sz);
+		bool verifyShortString(const std::string& sz) const;
+		bool caseInsensitiveEqual(const std::string& sz, const std::string& buf) const;
+		pEToken isBitvalue(const std::string& val) const;
 
 		static unsigned char specialEscape(unsigned char c);
 
@@ -497,6 +739,15 @@ namespace sys {
 			int sdepth;	// square depth
 		};
 
+		struct EBuiltinTable
+		{
+			std::string name;
+			pEToken		token;
+		};
+
+		static const EBuiltinTable FuncTable[];
+		static const EBuiltinTable ConstTable[];
+
 		void resetContext();
 
 	protected:
@@ -505,6 +756,27 @@ namespace sys {
 
 		std::string m_contents;
 		EParserContext m_context;
+
+	private:
+
+		// Random
+		static PEValue func_random_rand();
+		static PEValue func_random_rndn();
+		static PEValue func_random_rndg();
+		static PEValue func_random_range(EValue* a, EValue *b);
+		static PEValue func_random_roll(EValue* a, EValue *b);
+		static PEValue func_random_perlin(EValue *x);
+
+		// Math
+		static PEValue func_math_add(EValue* a, EValue *b);
+		static PEValue func_math_mult(EValue* a, EValue *b);
+		static PEValue func_math_div(EValue* a, EValue *b);
+		static PEValue func_math_sub(EValue* a, EValue *b);
+		static PEValue func_math_sin(EValue* x);
+		static PEValue func_math_cos(EValue* x);
+		static PEValue func_math_log(EValue* x);
+		static PEValue func_math_sqr(EValue* x);
+		static PEValue func_math_sqrt(EValue* x);
 	};
 
 	// tests

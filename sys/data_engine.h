@@ -1,6 +1,6 @@
 #pragma once
 
-#include "thread_os.h"
+#include "platform.h"
 #include "gamedata.h"
 
 #include <stdlib.h>

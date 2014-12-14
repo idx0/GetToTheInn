@@ -1,6 +1,6 @@
 #pragma once
 
-#include "thread_os.h"
+#include "thread.h"
 #include "event.h"
 #include "token.h"
 

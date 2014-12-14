@@ -1,13 +1,49 @@
 #pragma once
 
-#include "thread_os.h"
-#include "listener.h"
+#include "platform.h"
 
 namespace sys
 {
 
+// mutex prototype
+struct mutex
+{
+#ifdef __PLATFORM_WIN32__
+	CRITICAL_SECTION m;
+#else /* __PLATFORM_UNIX__ */
+	pthread_mutex_t m;
+#endif
+};
+
+// mutex functions are global
+int mutex_init(mutex *m);
+int mutex_destroy(mutex *m);
+
+int mutex_lock(mutex *m);
+int mutex_unlock(mutex *m);
+int mutex_trylock(mutex *m);
+
+struct barrier
+{
+	int thread_cnt;
+#ifdef __PLATFORM_WIN32__
+	unsigned int wait_cnt;
+	HANDLE sem;
+#else
+	pthread_barrier_t sem;
+#endif
+};
+
+void barrier_init(barrier *b, int nthreads);
+void barrier_destroy(barrier *b);
+
+void barrier_wait(barrier *b);
+
+extern barrier barrier_update;
+extern barrier barrier_calculate;
+
 // define thread local storage variables
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 typedef long thread_control_t;
 #  define EVOLVE_THREAD_DEFAULT_CONTROL 0
 #else
@@ -24,7 +60,7 @@ public:
 
 	thread_control_t m_tlsControl;
 
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	DWORD m_tls;
 #else
 	pthread_key_t m_tls;
@@ -36,11 +72,13 @@ public:
 #define THREAD_AFFINITY    0x000004
 #define THREAD_BARRIER     0x000008
 
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 typedef unsigned int (__stdcall *thread_caller_func)(void *);
 #else
 typedef void *(*thread_caller_func)(void *);
 #endif
+
+class listener;
 
 // main thread class
 class thread
@@ -67,7 +105,7 @@ public:
 	unsigned int getResult() { return m_result; }
 
 	listener *getListener() { return m_listener; }
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	HANDLE getThread() { return m_thread; }
 	unsigned getThreadId() { return m_thread_id; }
 #else
@@ -80,7 +118,7 @@ public:
 
 protected:
 
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	HANDLE m_thread;
 	unsigned m_thread_id;
 #else

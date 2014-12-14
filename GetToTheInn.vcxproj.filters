@@ -153,6 +153,12 @@
     <ClCompile Include="color.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="sys\strptime.c">
+      <Filter>Source Files\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="sys\memory.cpp">
+      <Filter>Source Files\sys</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engine.h">
@@ -245,9 +251,6 @@
     <ClInclude Include="sys\thread.h">
       <Filter>Header Files\sys</Filter>
     </ClInclude>
-    <ClInclude Include="sys\thread_os.h">
-      <Filter>Header Files\sys</Filter>
-    </ClInclude>
     <ClInclude Include="sys\token.h">
       <Filter>Header Files\sys</Filter>
     </ClInclude>
@@ -308,6 +311,12 @@
     <ClInclude Include="color.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="sys\platform.h">
+      <Filter>Header Files\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="sys\memory.h">
+      <Filter>Header Files\sys</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="jsoncpp\json_internalarray.inl">
@@ -319,5 +328,6 @@
     <None Include="jsoncpp\json_valueiterator.inl">
       <Filter>Source Files\jsoncpp</Filter>
     </None>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
 </Project>

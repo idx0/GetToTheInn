@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "thread_os.h"
+#include "thread.h"
 
 namespace sys
 {

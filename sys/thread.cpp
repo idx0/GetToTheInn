@@ -1,53 +1,54 @@
 #include "thread.h"
+#include "listener.h"
 
 namespace sys
 {
 
 int mutex_lock(mutex *m)
 {
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	EnterCriticalSection(&m->m);
 	return 0;
-#else /* __EVOLVE_UNIX__ */
+#else /* __PLATFORM_UNIX__ */
 	return pthread_mutex_lock(&m->m);
 #endif
 }
 
 int mutex_unlock(mutex *m)
 {
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	LeaveCriticalSection(&m->m);
 	return 0;
-#else /* __EVOLVE_UNIX__ */
+#else /* __PLATFORM_UNIX__ */
 	return pthread_mutex_unlock(&m->m);
 #endif
 }
 
 int mutex_trylock(mutex *m)
 {
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	return (TryEnterCriticalSection(&m->m) ? 0 : EBUSY);
-#else /* __EVOLVE_UNIX__ */
+#else /* __PLATFORM_UNIX__ */
 	return pthread_mutex_trylock(&m->m);
 #endif
 }
 
 int mutex_init(mutex *m)
 {
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	InitializeCriticalSection(&m->m);
 	return 0;
-#else /* __EVOLVE_UNIX__ */
+#else /* __PLATFORM_UNIX__ */
 	return pthread_mutex_init(&m->m, NULL);
 #endif
 }
 
 int mutex_destroy(mutex *m)
 {
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	DeleteCriticalSection(&m->m);
 	return 0;
-#else /* __EVOLVE_UNIX__ */
+#else /* __PLATFORM_UNIX__ */
 	return pthread_mutex_destroy(&m->m);
 #endif
 }
@@ -55,7 +56,7 @@ int mutex_destroy(mutex *m)
 void barrier_init(barrier *b, int nthreads)
 {
 	b->thread_cnt = nthreads;
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	b->wait_cnt = nthreads;
 	b->sem = CreateSemaphore(0, 0, nthreads, NULL);
 #else
@@ -65,7 +66,7 @@ void barrier_init(barrier *b, int nthreads)
 
 void barrier_destroy(barrier *b)
 {
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	CloseHandle(b->sem);
 #else
 	pthread_barrier_destroy(&b->sem);
@@ -74,7 +75,7 @@ void barrier_destroy(barrier *b)
 
 void barrier_wait(barrier *b)
 {
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	if (InterlockedDecrement(&(b->wait_cnt)) == 0) {
 		b->wait_cnt = b->thread_cnt;
 		ReleaseSemaphore(b->sem, (b->thread_cnt - 1), 0);
@@ -90,7 +91,7 @@ static thread_tls global_tls;
 
 thread_tls::thread_tls()
 {
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	m_tls = TlsAlloc();
 	if (m_tls == TLS_OUT_OF_INDEXES) _exit(ENOMEM);
 #else
@@ -103,14 +104,14 @@ barrier barrier_calculate;
 
 thread_tls::~thread_tls()
 {
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	TlsFree(m_tls);
 #else
 	pthread_key_delete(m_tls);
 #endif
 }
 
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 static unsigned int __stdcall __win32_callback_wrapper(void *parg)
 {
 	thread *t = (thread *)parg;
@@ -156,7 +157,7 @@ thread::thread(unsigned int flags)
 	m_flags = flags;
 	m_result = 0;
 		
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	m_thread = (HANDLE)-1;
 	m_thread_id = 0;
 #else
@@ -187,7 +188,7 @@ int thread::once(thread_tls *tls)
 {
 	tls->m_tlsControl = EVOLVE_THREAD_DEFAULT_CONTROL;
 
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	int state = (int)tls->m_tlsControl;
 	
 	_ReadWriteBarrier();
@@ -215,7 +216,7 @@ int thread::once(thread_tls *tls)
 
 void thread::create_thread()
 {
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	m_thread = (HANDLE)-1;
 	_ReadWriteBarrier();
 	
@@ -245,7 +246,7 @@ void thread::exit_thread(unsigned int result)
 {
 	m_result = result;
 
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	_endthreadex(m_result);
 #else
 	pthread_exit(&m_result);
@@ -259,7 +260,7 @@ void thread::join()
 
 int thread_detach(thread *t)
 {
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	CloseHandle(t->getThread());
 	_ReadWriteBarrier();
 	
@@ -273,7 +274,7 @@ int thread_join(thread *t, void **result)
 {
 	if (!(t->getFlags() & THREAD_JOINABLE)) return 1;
 	
-#ifdef __EVOLVE_WIN32__	
+#ifdef __PLATFORM_WIN32__	
 	WaitForSingleObject(t->getThread(), INFINITE);
 	CloseHandle(t->getThread());
 	

@@ -13,58 +13,38 @@
 #pragma once
 
 #if (_MSC_VER > 0 && (defined(_WIN32) || defined(__MINGW32__)))
-#  define __EVOLVE_WIN32__
+#  define __PLATFORM_WIN32__
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <windows.h>
 #  include <intrin.h>
 #  include <process.h>
+#  include <malloc.h>
 #else
-#  define __EVOLVE_LINUX_
+#  define __PLATFORM_LINUX_
 #  include <unistd.h>
 #  include <pthread.h>
 #endif
 
 #include <errno.h>
+#include <stdlib.h>
 
-namespace sys
-{
+#undef NDEBUG
+#include <assert.h>
 
-// mutex prototype
-struct mutex
-{
-#ifdef __EVOLVE_WIN32__
-	CRITICAL_SECTION m;
-#else /* __EVOLVE_UNIX__ */
-	pthread_mutex_t m;
-#endif
-};
-
-// mutex functions are global
-int mutex_init(mutex *m);
-int mutex_destroy(mutex *m);
-
-int mutex_lock(mutex *m);
-int mutex_unlock(mutex *m);
-int mutex_trylock(mutex *m);
-
-struct barrier
-{
-	int thread_cnt;
-#ifdef __EVOLVE_WIN32__
-	unsigned int wait_cnt;
-	HANDLE sem;
-#else
-	pthread_barrier_t sem;
-#endif
-};
-
-void barrier_init(barrier *b, int nthreads);
-void barrier_destroy(barrier *b);
-
-void barrier_wait(barrier *b);
-
-extern barrier barrier_update;
-extern barrier barrier_calculate;
-
+#ifdef __PLATFORM_WIN32__
+#define strncasecmp(x, y, z)	_strnicmp(x, y, z)
+#define strcasecmp(x, y)		_stricmp(x, y)
+#  ifdef __cplusplus
+extern "C" {
+#  endif
+char *_strptime(const char *buf, const char *fmt, struct tm *tm);
+#define strptime(x, y, z)	_strptime(x, y, z)
+#  ifdef __cplusplus
 }
+#  endif
+#else
+#include <strings.h>
+#define _aligned_alloc(x, y)	aligned_alloc(y, x)
+#define _aligned_free(x)		free(x)
+#endif

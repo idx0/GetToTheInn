@@ -108,6 +108,8 @@
     <ClCompile Include="sys\hash.c" />
     <ClCompile Include="sys\listener.cpp" />
     <ClCompile Include="sys\logger.cpp" />
+    <ClCompile Include="sys\memory.cpp" />
+    <ClCompile Include="sys\strptime.c" />
     <ClCompile Include="sys\token.cpp" />
     <ClCompile Include="sys\thread.cpp" />
     <ClCompile Include="sys\worker.cpp" />
@@ -158,9 +160,10 @@
     <ClInclude Include="sys\hash.h" />
     <ClInclude Include="sys\listener.h" />
     <ClInclude Include="sys\logger.h" />
+    <ClInclude Include="sys\memory.h" />
     <ClInclude Include="sys\token.h" />
     <ClInclude Include="sys\thread.h" />
-    <ClInclude Include="sys\thread_os.h" />
+    <ClInclude Include="sys\platform.h" />
     <ClInclude Include="sys\worker.h" />
     <ClInclude Include="ui\ui.h" />
     <ClInclude Include="ui\uiframe.h" />
@@ -175,6 +178,7 @@
     <ClInclude Include="viewport.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram.cd" />
     <None Include="jsoncpp\json_internalarray.inl" />
     <None Include="jsoncpp\json_internalmap.inl" />
     <None Include="jsoncpp\json_valueiterator.inl" />

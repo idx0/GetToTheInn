@@ -1,12 +1,14 @@
 #include "eof_parser.h"
-#include "thread_os.h"
+#include "platform.h"
 #include "../rnd.h"
 
 #include <stdlib.h>
 #include <sstream>
 #include <list>
+#include <algorithm>
+#include <assert.h>
 
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 #include <iomanip>
 #else
 #define _GNU_SOURCE
@@ -20,7 +22,8 @@ namespace sys {
 			"NULL",
 			"id",
 			"value",
-			"color",
+			"field",
+			"defn",
 			"string",
 			"bitfield",
 			"time",
@@ -56,9 +59,6 @@ namespace sys {
 
 	///////////////////////////////////////////////////////////////////////////
 
-	const EValueFloat EValueFloat::PI(3.14159265359f);
-	const EValueFloat EValueFloat::E(2.71828182846f);
-
 	EValueFloat::EValueFloat(float f) : m_value(f)
 	{
 		// nothing
@@ -75,6 +75,11 @@ namespace sys {
 		pg.fromFloat(m_value);
 
 		return pg;
+	}
+
+	EValue* EValueFloat::copy()
+	{
+		return new EValueFloat(m_value);
 	}
 
 	///////////////////////////////////////////////////////////////////////////
@@ -97,12 +102,23 @@ namespace sys {
 		return pg;
 	}
 
+	EValue* EValueInt::copy()
+	{
+		return new EValueInt(m_value);
+	}
+
 	///////////////////////////////////////////////////////////////////////////
 
 	EValueFunc::EValueFunc() :
 		m_param1(NULL), m_param2(NULL)
 	{
 		// nothing
+	}
+
+	EValueFunc::~EValueFunc()
+	{
+		delete m_param1;
+		delete m_param2;
 	}
 
 	EValueFuncNoArgs::EValueFuncNoArgs(pEValueFuncNoArgs func) : m_func(func)
@@ -115,13 +131,27 @@ namespace sys {
 		m_param1 = param;
 	}
 
+	EValueFuncOneArg::EValueFuncOneArg(pEValueFuncOneArg func) : m_func(func)
+	{
+	}
+
 	EValueFuncTwoArgs::EValueFuncTwoArgs(pEValueFuncTwoArgs func, EValue* p1, EValue* p2) : m_func(func)
 	{
 		m_param1 = p1;
 		m_param2 = p2;
 	}
 
+	EValueFuncTwoArgs::EValueFuncTwoArgs(pEValueFuncTwoArgs func) : m_func(func)
+	{
+
+	}
+
 	PEValue EValueFuncNoArgs::value()
+	{
+		return m_func();
+	}
+
+	PEValue EValueFuncNoArgs::value(EValue* v1, EValue* v2)
 	{
 		return m_func();
 	}
@@ -131,251 +161,49 @@ namespace sys {
 		return m_func(m_param1);
 	}
 
+	PEValue EValueFuncOneArg::value(EValue* v1, EValue* v2)
+	{
+		return m_func(v1);
+	}
+
 	PEValue EValueFuncTwoArgs::value()
 	{
 		return m_func(m_param1, m_param2);
 	}
 
-	///////////////////////////////////////////////////////////////////////////
-
-	const FunctionTable EValueFunc::FuncTable[] = {
-		{ "RAND",	func_random_rand,	NULL,				NULL				},
-		{ "RNDN",	func_random_rndn,	NULL,				NULL				},
-		{ "RNDG",	func_random_rndg,	NULL,				NULL				},
-		{ "RRNG",	NULL,				NULL,				func_random_range	},
-		{ "ROLL",	NULL,				NULL,				func_random_roll	},
-		{ "PRLN",	NULL,				func_random_perlin,	NULL				},
-		{ "ADD",	NULL,				NULL,				func_math_add		},
-		{ "MULT",	NULL,				NULL,				func_math_mult		},
-		{ "DIV",	NULL,				NULL,				func_math_div		},
-		{ "SUB",	NULL,				NULL,				func_math_sub		},
-		{ "SIN",	NULL,				func_math_sin,		NULL				},
-		{ "COS",	NULL,				func_math_cos,		NULL				},
-		{ "LOG",	NULL,				func_math_log,		NULL				},
-		{ "SQR",	NULL,				func_math_sqr,		NULL				},
-		{ "SQRT",	NULL,				func_math_sqrt,		NULL				},
-	};
-	// function not found.  functions first argument will be used as value.
-
-	///////////////////////////////////////////////////////////////////////////
-
-	PEValue func_random_rand()
+	PEValue EValueFuncTwoArgs::value(EValue* v1, EValue* v2)
 	{
-		PEValue pg;
-		pg.fromInt(Rnd::random());
-
-		return pg;
+		return m_func(v1, v2);
 	}
 
-	PEValue func_random_rndn()
+	EValue* EValueFuncTwoArgs::copy()
 	{
-		PEValue pg;
-		pg.fromFloat(Rnd::rndn());
-
-		return pg;
+		return new EValueFuncTwoArgs(m_func, m_param1, m_param2);
 	}
 
-	PEValue func_random_rndg()
+	int EValueFuncTwoArgs::nArgs() const
 	{
-		PEValue pg;
-		pg.fromFloat(Rnd::rndg());
-
-		return pg;
+		return 2;
 	}
 
-	PEValue func_random_range(EValue* a, EValue *b)
+	EValue* EValueFuncOneArg::copy()
 	{
-		PEValue pg;
-
-		if ((a) && (b)) {
-			PEValue av = a->value();
-			PEValue bv = b->value();
-
-			// cue off of the 'a' value to determine integer vs float
-			if (av.t == PEValue::INTEGER) {
-				pg.fromInt(Rnd::between(av.asInt(), bv.asInt()));
-			} else {
-				pg.fromFloat(Rnd::betweenf(av.asFloat(), bv.asFloat()));
-			}
-		}
-
-		return pg;
+		return new EValueFuncOneArg(m_func, m_param1);
 	}
 
-	PEValue func_random_roll(EValue* a, EValue *b)
+	int EValueFuncOneArg::nArgs() const
 	{
-		PEValue pg;
-
-		if ((a) && (b)) {
-			PEValue av = a->value();
-			PEValue bv = b->value();
-
-			pg.fromInt(Rnd::ndx(av.asInt(), bv.asInt()));
-		}
-
-		return pg;
+		return 1;
 	}
 
-	PEValue func_random_perlin(EValue *x)
+	EValue* EValueFuncNoArgs::copy()
 	{
-		PEValue pg;
-
-		if (x) {
-			PEValue xv = x->value();
-
-			pg.fromFloat(Rnd::perlin(xv.asFloat()));
-		}
-
-		return pg;
+		return new EValueFuncNoArgs(m_func);
 	}
 
-	PEValue func_math_add(EValue* a, EValue *b)
+	int EValueFuncNoArgs::nArgs() const
 	{
-		PEValue pg;
-
-		if ((a) && (b)) {
-			PEValue av = a->value();
-			PEValue bv = b->value();
-
-			// cue off of the 'a' value to determine integer vs float
-			if (av.t == PEValue::INTEGER) {
-				pg.fromInt(av.asInt() + bv.asInt());
-			} else {
-				pg.fromFloat(av.asFloat() + bv.asFloat());
-			}
-		}
-
-		return pg;
-	}
-
-	PEValue func_math_mult(EValue* a, EValue *b)
-	{
-		PEValue pg;
-
-		if ((a) && (b)) {
-			PEValue av = a->value();
-			PEValue bv = b->value();
-
-			// cue off of the 'a' value to determine integer vs float
-			if (av.t == PEValue::INTEGER) {
-				pg.fromInt(av.asInt() * bv.asInt());
-			} else {
-				pg.fromFloat(av.asFloat() * bv.asFloat());
-			}
-		}
-
-		return pg;
-	}
-
-	PEValue func_math_div(EValue* a, EValue *b)
-	{
-		PEValue pg;
-
-		if ((a) && (b)) {
-			PEValue av = a->value();
-			PEValue bv = b->value();
-
-			if ((bv.u.i == 0) || (bv.u.f == 0.0f)) return pg;
-
-			// cue off of the 'a' value to determine integer vs float
-			if (av.t == PEValue::INTEGER) {
-				pg.fromInt(av.asInt() / bv.asInt());
-			} else {
-				pg.fromFloat(av.asFloat() / bv.asFloat());
-			}
-		}
-
-		return pg;
-	}
-
-	PEValue func_math_sub(EValue* a, EValue *b)
-	{
-		PEValue pg;
-
-		if ((a) && (b)) {
-			PEValue av = a->value();
-			PEValue bv = b->value();
-
-			// cue off of the 'a' value to determine integer vs float
-			if (av.t == PEValue::INTEGER) {
-				pg.fromInt(av.asInt() - bv.asInt());
-			} else {
-				pg.fromFloat(av.asFloat() - bv.asFloat());
-			}
-		}
-
-		return pg;
-	}
-
-	PEValue func_math_sin(EValue* x)
-	{
-		PEValue pg;
-
-		if (x) {
-			PEValue xv = x->value();
-
-			pg.fromFloat(sin(xv.asFloat()));
-		}
-
-		return pg;
-	}
-
-	PEValue func_math_cos(EValue* x)
-	{
-		PEValue pg;
-
-		if (x) {
-			PEValue xv = x->value();
-
-			pg.fromFloat(cos(xv.asFloat()));
-		}
-
-		return pg;
-	}
-
-	PEValue func_math_log(EValue* x)
-	{
-		PEValue pg;
-
-		if (x) {
-			PEValue xv = x->value();
-
-			pg.fromFloat(log10(xv.asFloat()));
-		}
-
-		return pg;
-	}
-
-	PEValue func_math_sqr(EValue* x)
-	{
-		PEValue pg;
-
-		if (x) {
-			PEValue xv = x->value();
-
-			if (xv.t == PEValue::INTEGER) {
-				int iv = xv.asInt();
-				pg.fromInt(iv * iv);
-			} else {
-				float fv = xv.asFloat();
-				pg.fromFloat(fv * fv);
-			}
-		}
-
-		return pg;
-	}
-
-	PEValue func_math_sqrt(EValue* x)
-	{
-		PEValue pg;
-
-		if (x) {
-			PEValue xv = x->value();
-
-			pg.fromFloat(sqrt(xv.asFloat()));
-		}
-
-		return pg;
+		return 0;
 	}
 
 	///////////////////////////////////////////////////////////////////////////
@@ -398,6 +226,85 @@ namespace sys {
 	std::string EString::value()
 	{
 		return m_string;
+	}
+
+	///////////////////////////////////////////////////////////////////////////
+
+	EBoolean::EBoolean(bool b) : EToken(E_BOOL), m_bool(b)
+	{
+		// nothing
+	}
+
+	EBoolean::~EBoolean()
+	{
+		// nothing
+	}
+
+	bool EBoolean::value()
+	{
+		return m_bool;
+	}
+
+	///////////////////////////////////////////////////////////////////////////
+
+	ETime::ETime() : EToken(E_TIME)
+	{
+		time(&m_time);
+	}
+
+	ETime::ETime(time_t t) : EToken(E_TIME), m_time(t)
+	{
+		// nothing
+	}
+
+	ETime::~ETime()
+	{
+		// nothing
+	}
+
+	time_t ETime::value()
+	{
+		return m_time;
+	}
+
+	///////////////////////////////////////////////////////////////////////////
+
+	const unsigned int EBitField::BIT_MAX = 32;
+
+	EBitField::EBitField() : EToken(E_BITFIELD), m_field(0)
+	{
+		// nothing
+	}
+
+	EBitField::EBitField(unsigned int field) : EToken(E_BITFIELD), m_field(field)
+	{
+		// nothing
+	}
+
+	EBitField::~EBitField()
+	{
+		// nothing
+	}
+
+	unsigned int EBitField::value()
+	{
+		return m_field;
+	}
+
+	void EBitField::set(unsigned int bit)
+	{
+		if (bit < BIT_MAX) {
+			m_field |= B1(bit);
+		}
+	}
+
+	bool EBitField::isSet(unsigned int bit) const
+	{
+		if (bit < BIT_MAX) {
+			return ((m_field & B1(bit)) != 0);
+		}
+
+		return false;
 	}
 
 	///////////////////////////////////////////////////////////////////////////
@@ -503,9 +410,267 @@ namespace sys {
 
 	///////////////////////////////////////////////////////////////////////////
 
+	EShortString::EShortString()
+	{
+		clear();
+	}
+
+	EShortString::EShortString(const std::string& sz)
+	{
+		assign(sz);
+	}
+
+	EShortString::EShortString(const char* sz)
+	{
+		assign(sz);
+	}
+
+	EShortString::~EShortString()
+	{
+		// nothing
+	}
+
+	bool EShortString::isshort(unsigned char c)
+	{
+		return (((c >= 'A') && (c <= 'Z')) ||
+				((c >= 'a') && (c <= 'z')) ||
+				((c >= '0') && (c <= '9')) ||
+				(c == '_'));
+	}
+
+	const char* EShortString::str() const
+	{
+		return m_string;
+	}
+
+	unsigned int EShortString::length() const
+	{
+		return m_length;
+	}
+
+	EShortString& EShortString::operator=(const EShortString& rhs)
+	{
+		if (this != &rhs) {
+			clear();
+			unsigned int len = rhs.length();
+
+			for (unsigned int i = 0; i < len; i++) {
+				char c = rhs.at(i);
+
+				if (isshort(c)) {
+					m_string[m_length++] = c;
+				}
+			}
+		}
+
+		return *this;
+	}
+
+	bool EShortString::operator==(const EShortString& rhs) const
+	{
+		return compare(rhs);
+	}
+
+	bool EShortString::operator<(const EShortString &rhs) const
+	{
+		unsigned int len = std::min(m_length, rhs.length());
+
+		for (unsigned int i = 0; i < len; i++) {
+			if (m_string[i] != rhs.at(i)) {
+				return m_string[i] < rhs.at(i);
+			}
+		}
+
+		return false;
+	}
+
+	// compares this short string to the given string based on the
+	// given case sensitivity.  true is returned if they are equal
+	bool EShortString::compare(const std::string& sz, bool caseSensitive) const
+	{
+		if (sz.length() != m_length) return false;
+
+		for (unsigned int i = 0; i < m_length; i++) {
+			if (caseSensitive) {
+				if (m_string[i] != sz.at(i)) return false;
+			} else {
+				if (tolower(m_string[i]) != tolower(sz.at(i))) return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool EShortString::compare(const char* sz, bool caseSensitive) const
+	{
+		if (strlen(sz) != m_length) return false;
+
+		for (unsigned int i = 0; i < m_length; i++) {
+			if (caseSensitive) {
+				if (m_string[i] != sz[i]) return false;
+			} else {
+				if (tolower(m_string[i]) != tolower(sz[i])) return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool EShortString::compare(const EShortString& sz, bool caseSensitive) const
+	{
+		if (sz.length() != m_length) return false;
+
+		for (unsigned int i = 0; i < m_length; i++) {
+			if (caseSensitive) {
+				if (m_string[i] != sz.at(i)) return false;
+			} else {
+				if (tolower(m_string[i]) != tolower(sz.at(i))) return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool EShortString::compare(char c, bool caseSensitive) const
+	{
+		if (m_length != 1) return false;
+
+		if (caseSensitive) {
+			return (m_string[0] == c);
+		} else {
+			return (tolower(m_string[0]) == tolower(c));
+		}
+	}
+
+	// assigns this short string to the given value
+	void EShortString::assign(const std::string& sz)
+	{
+		clear();
+		unsigned int len = std::min(sz.length(), sSHORT_STRING_LEN);
+
+		for (unsigned int i = 0; i < len; i++) {
+			char c = sz.at(i);
+			if (isshort(c)) {
+				m_string[m_length++] = c;
+			}
+		}
+	}
+
+	void EShortString::assign(const char* sz)
+	{
+		clear();
+		unsigned int len = std::min(strlen(sz), sSHORT_STRING_LEN);
+
+		for (unsigned int i = 0; i < len; i++) {
+			char c = sz[i];
+			if (isshort(c)) {
+				m_string[m_length++] = c;
+			}
+		}
+	}
+
+	void EShortString::assign(const EShortString& sz)
+	{
+		operator=(sz);
+	}
+
+	void EShortString::assign(char c, unsigned int n)
+	{
+		clear();
+		m_length = std::min(n, sSHORT_STRING_LEN);
+
+		if (isshort(c)) {
+			for (unsigned int i = 0; i < m_length; i++) {
+				m_string[i] = c;
+			}
+		}
+	}
+
+	void EShortString::clear()
+	{
+		memset(m_string, 0, sSHORT_STRING_LEN + 1);
+		m_length = 0;
+	}
+
+	bool EShortString::empty() const
+	{
+		return (m_length == 0);
+	}
+
+	EShortString& EShortString::operator+=(const EShortString& rhs)
+	{
+		unsigned int len = std::min(rhs.length(), sSHORT_STRING_LEN - m_length);
+
+		for (unsigned int i = 0; i < len; i++) {
+			m_string[m_length + i] = rhs.at(i);
+		}
+
+		m_length += len;
+
+		return *this;
+	}
+
+	EShortString& EShortString::operator+=(char rhs)
+	{
+		if (m_length < sSHORT_STRING_LEN) {
+			m_string[m_length++] = rhs;
+		}
+
+		return *this;
+	}
+
+	char& EShortString::operator[](int n)
+	{
+		assert((n > 0) && (n < m_length));
+		return m_string[n];
+	}
+
+	const char& EShortString::operator[](int n) const
+	{
+		assert((n > 0) && (n < m_length));
+		return m_string[n];
+	}
+
+	char EShortString::at(int n) const
+	{
+		if ((n > 0) && (n < m_length)) {
+			return m_string[n];
+		}
+
+		return 0;
+	}
+
+	///////////////////////////////////////////////////////////////////////////
+
+	const EParser::EBuiltinTable EParser::FuncTable[] = {
+		{ "RAND",	new EValueFuncNoArgs(func_random_rand) },
+		{ "RNDN",	new EValueFuncNoArgs(func_random_rndn) },
+		{ "RNDG",	new EValueFuncNoArgs(func_random_rndg) },
+		{ "RRNG",	new EValueFuncTwoArgs(func_random_range) },
+		{ "ROLL",	new EValueFuncTwoArgs(func_random_roll) },
+		{ "PRLN",	new EValueFuncOneArg(func_random_perlin) },
+		{ "ADD",	new EValueFuncTwoArgs(func_math_add) },
+		{ "MULT",	new EValueFuncTwoArgs(func_math_mult) },
+		{ "DIV",	new EValueFuncTwoArgs(func_math_div) },
+		{ "SUB",	new EValueFuncTwoArgs(func_math_sub) },
+		{ "SIN",	new EValueFuncOneArg(func_math_sin) },
+		{ "COS",	new EValueFuncOneArg(func_math_cos) },
+		{ "LOG",	new EValueFuncOneArg(func_math_log) },
+		{ "SQR",	new EValueFuncOneArg(func_math_sqr) },
+		{ "SQRT",	new EValueFuncOneArg(func_math_sqrt) }
+	};
+	// function not found.  functions first argument will be used as value.
+
+	const EParser::EBuiltinTable EParser::ConstTable[] = {
+		{ "PI", new EValueFloat(3.14159265359f) },
+		{ "E", new EValueFloat(2.71828182846f) }
+	};
+
+	///////////////////////////////////////////////////////////////////////////
+
 	EParser::EParser(const char* filename)
 	{
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 		fopen_s(&m_fp, filename, "r");
 #else
 		m_fp = fopen(filename, "r");
@@ -516,7 +681,7 @@ namespace sys {
 
 		if (m_fp) {
 			std::fseek(m_fp, 0, SEEK_END);
-			size_t cap = std::ftell(m_fp);
+			size_t cap = std::min((size_t)EOF_PARSER_FILEMAX, (size_t)std::ftell(m_fp));
 			std::rewind(m_fp);
 
 			buffer = new char[cap];
@@ -526,9 +691,18 @@ namespace sys {
 		}
 	}
 
+	EParser::EParser(const std::string& sz) : m_fp(NULL)
+	{
+		resetContext();
+
+		m_contents.assign(sz);
+	}
+
 	EParser::~EParser()
 	{
-		fclose(m_fp);
+		if (m_fp) {
+			fclose(m_fp);
+		}
 	}
 
 	void EParser::resetContext()
@@ -543,12 +717,16 @@ namespace sys {
 		m_context.flags = 0;
 	}
 
-	bool EParser::isshort(unsigned char c)
+	bool EParser::ishex(unsigned char c)
 	{
-		return (((c >= 'A') && (c <= 'Z')) ||
-				((c >= 'a') && (c <= 'z')) ||
-				((c >= '0') && (c <= '9')) ||
-				(c == '_'));
+		return (((c >= 'A') && (c <= 'F')) ||
+				((c >= 'a') && (c <= 'f')) ||
+				((c >= '0') && (c <= '9')));
+	}
+
+	bool EParser::isbinary(unsigned char c)
+	{
+		return ((c == '0') || (c == '1'));
 	}
 
 	unsigned char EParser::specialEscape(unsigned char c)
@@ -685,7 +863,7 @@ namespace sys {
 				// when we return from parse quote, we will be past the string
 
 				sstr += EOF_DOUBLE_QUOTE;
-				sstr.append(parseQuote());
+				sstr.append(parseQuote(true));
 				sstr += EOF_DOUBLE_QUOTE;
 
 			} else if (isspace(c)) {
@@ -722,7 +900,7 @@ namespace sys {
 		return statement;
 	}
 	
-	std::string EParser::parseQuote()
+	std::string EParser::parseQuote(bool keepslashes)
 	{
 		bool escaped = false;
 		std::string statement;
@@ -747,6 +925,7 @@ namespace sys {
 			if (c == EOF_ESCAPE_CHAR) {
 				if (escaped) {
 					// we have an escaped backslash
+					if (keepslashes) statement += EOF_ESCAPE_CHAR;
 					statement += c;
 					escaped = false;
 				} else {
@@ -754,7 +933,12 @@ namespace sys {
 				}
 			} else if (escaped) {
 				// we just saw an escaped character, is it something special?
-				statement += specialEscape(c);
+				if (keepslashes) {
+					statement += EOF_ESCAPE_CHAR;
+					statement += c;
+				} else {
+					statement += specialEscape(c);
+				}
 
 				escaped = false;
 			} else if ((m_context.flags & E_PARSE_IN_DQUOTE) &&
@@ -774,32 +958,241 @@ namespace sys {
 		return statement;
 	}
 
-	bool EParser::verifyShortString(const std::string& sz)
+	bool EParser::verifyShortString(const std::string& sz) const
 	{
 		for (int i = 0; i < (int)sz.length(); i++) {
-			if (!isshort(sz.at(i))) return false;
+			if (!EShortString::isshort(sz.at(i))) return false;
 		}
 
 		return true;
 	}
 
-	void EParser::parseField()
+	bool EParser::caseInsensitiveEqual(const std::string& sz, const std::string& buf) const
 	{
+		int len = (int)std::min(sz.length(), buf.length());
+
+		for (int i = 0; i < len; i++) {
+			if (tolower(sz.at(i)) != tolower(buf.at(i))) return false;
+		}
+
+		return true;
 	}
 
-	void EParser::parseToken()
+	pEToken EParser::isBitvalue(const std::string& val) const
 	{
-#if 0
-		unsigned char start = m_contents[m_context.pos];
+		unsigned int bf;
 
-		// try to determine the type of token we are trying to parse
+		if ((val.length() > 2) &&
+			(val.at(0) == '0') &&
+			(tolower(val.at(1)) == 'x'))
+		{
+			// parse has hex number
+			for (int i = 2; i < val.length(); i++) {
+				if (!ishex(val.at(i))) return static_cast<pEToken>(0);
+			}
 
+			EValue *ev = parseLiteral(val);
 
-		for (; m_context.pos < m_contents.length(); m_context.pos++) {
-			unsigned char c = m_contents[m_context.pos];
+			if (ev) {
+				bf = (unsigned int)ev->value().asInt();
+				delete ev;
 
+				return new EBitField(bf);
+			}
+		} else if ((val.length() > 0) && (val.length() <= 32)) {
+			bf = 0;
+
+			// parse as 0 or 1
+			for (int i = 0; i < val.length(); i++) {
+				if (!isbinary(val.at(i))) return static_cast<pEToken>(0);
+
+				if (val.at(val.length() - (i + 1)) == '1') {
+					bf |= B1(i);
+				}
+			}
+
+			return new EBitField(bf);
 		}
-#endif
+
+		return static_cast<pEToken>(0);
+	}
+
+	pEToken EParser::parseField()
+	{
+		return static_cast<pEToken>(0);
+	}
+
+	pEToken EParser::parseValue(const std::string& val)
+	{
+		std::list<EValue*> values;
+		std::list<EValue*> func;
+		std::string buf;
+		char c;
+
+		// here we loop through the string, splitting on (), characters and
+		// putting functions in one stack and literal values in another
+		for (int i = 0; i <= val.length(); i++) {
+			if (i == val.length()) {
+				c = EOF_END_OF_STR;
+			} else {
+				c = val.at(i);
+			}
+
+			if ((c == EOF_END_OF_STR) ||
+				(c == EOF_FIELD_OPEN) ||
+				(c == EOF_FIELD_CLOSE) ||
+				(c == EOF_TOKEN_DELIM)) {
+				if (!buf.empty()) {
+					static const int sBUILTIN_SIZE = sizeof(FuncTable) / sizeof(EBuiltinTable);
+					bool found = false;
+
+					for (int x = 0; x < sBUILTIN_SIZE; x++) {
+						if (FuncTable[x].name.compare(buf) == 0) {
+							found = true;
+							EValue* fptr = dynamic_cast<EValue*>(FuncTable[x].token);
+
+							if (fptr) {
+								func.push_front(fptr->copy());
+
+								if (func.size() > EOF_FUNC_DEPTH) {
+									func.pop_front();
+									printf("warning: recursive function depth exceeded - skipping");
+									i = val.length() + 1;	// exit the loop
+								}
+							}
+							break;
+						}
+					}
+
+					if (!found) {
+						values.push_front(parseLiteral(buf));
+					}
+
+					buf.clear();
+				}
+			} else {
+				buf += c;
+			}
+		}
+
+		// this is basically shunting yard, we have our functions in reverse order
+		// in the func list, and our values in reverse order in the values list.
+		// now, we pop a function, and pop the off the values list the number of
+		// values equal to the number of function arguments.  Then, we pop the result
+		// to the values list.
+
+		// Continue this process until the function list is empty, if exactly one value
+		// is on the values list, the process is complete and valid with that value being
+		// result
+		while (func.size() > 0) {
+			EValueFunc* f = dynamic_cast<EValueFunc*>(func.front());
+			func.pop_front();
+
+			if (f) { // just to be safe
+				int n = f->nArgs();
+
+				if (values.size() < n) {
+					printf("error: not enough arguments for function\n");
+					func.clear();
+					break;
+				} else {
+					EValue *p1, *p2;
+
+					// for now we only support 2 argument functions, otherwise we will have
+					// to get creative about the ways we can pass argument parameters
+					switch (n) {
+					default:
+					case 0:
+						// nothing
+						break;
+					case 1:
+						p1 = values.front();
+						values.pop_front();
+
+						f->args(p1);
+						break;
+					case 2:
+						p2 = values.front();	// arg2 first
+						values.pop_front();
+						p1 = values.front();
+						values.pop_front();
+
+						f->args(p1, p2);
+						break;
+					}
+
+					values.push_front(f);
+				}
+			}
+		}
+
+		if (values.size() == 1) {
+			return values.front();
+		} else {
+			printf("error: unused arguments in expression\n");
+		}
+
+		return static_cast<pEToken>(0);
+	}
+
+	EValue* EParser::parseLiteral(const std::string& val) const
+	{
+		// digit : ([0-9]*(\.[0-9]*)?)
+		//   hex : (0x[0-9A-Fa-f]+)
+		// value : (([+-])?digit|hex)
+		bool hex = false;
+		int i = 0;
+
+		unsigned int u;
+		int			 s;
+		float		 f;
+
+		// first, check if the literal is a known constant
+		static const int sBUILTIN_SIZE = sizeof(ConstTable) / sizeof(EBuiltinTable);
+		for (int x = 0; x < sBUILTIN_SIZE; x++) {
+			if (FuncTable[x].name.compare(val) == 0) {
+				EValue* v = dynamic_cast<EValue*>(FuncTable[x].token);
+
+				if (v) {
+					return v->copy();
+				}
+			}
+		}
+
+		if (val.length() > 0) {
+			if ((val.at(0) == '+') || (val.at(0) == '-')) {
+				i++;
+			}
+
+			if ((val.length() > (2 + i)) &&
+				(val.at(0 + i) == '0') &&
+				(tolower(val.at(1 + i)) == 'x')) {
+				hex = true;
+			}
+
+			if (hex) {
+				// hex value
+				sscanf_s(val.c_str(), "%x", &u);
+				return new EValueInt((int)u);
+			} else if (val.find('.') == std::string::npos) {
+				// int
+				sscanf_s(val.c_str(), "%d", &s);
+				return new EValueInt(s);
+			} else {
+				// float
+				sscanf_s(val.c_str(), "%f", &f);
+				return new EValueFloat(f);
+			}
+		}
+
+		return static_cast<EValue*>(0);
+	}
+
+	void EParser::parseTokens(const std::string& defn)
+	{
+		static const std::string sTRUE("true");
+		static const std::string sFALSE("false");
+
 		// we want to parse each definition and split it into parts delimited by ','.
 		// we need to be mindful of quoted strings and nested defintions.  remember
 		// that we already have the definition as it is with extra whitespace removed.
@@ -825,7 +1218,122 @@ namespace sys {
 		//   random : RAND, RNDG, RNDN, RRNG, ROLL, PRLN
 		// constant : E, PI
 
-		
+		std::vector<std::string> tokens;
+		std::vector<pEToken> ptrs;
+
+		bool parsed = false;
+		bool haveid = false;
+		std::string buf;
+
+		EParser p(defn);	// internal parser
+
+		// we can assume that the input to this function is a minimized definition string.
+		for (p.m_context.pos = 1;
+			 p.m_context.pos < p.m_contents.length();
+			 p.m_context.pos++) {
+			char c = p.m_contents[p.m_context.pos];
+
+			if (c == EOF_FIELD_OPEN) {
+				p.m_context.flags |= E_PARSE_IN_PAREN;
+				buf += c;
+			} else if (p.m_context.flags & E_PARSE_IN_PAREN) {
+				if (c == EOF_FIELD_CLOSE) {
+					p.m_context.flags &= ~E_PARSE_IN_PAREN;
+				}
+
+				buf += c;
+			} else if ((c == EOF_DOUBLE_QUOTE) ||
+					   (c == EOF_SINGLE_QUOTE)) {
+				// parse quote
+				EString* s = new EString(p.parseQuote());
+
+				ptrs.push_back(s);
+				tokens.push_back(s->value());
+				parsed = true;
+			} else if (c == EOF_DEFN_OPEN) {
+				// defn
+				p.m_context.pos++;
+				p.m_context.cdepth++;
+
+				tokens.push_back(p.parseDefn()->text());
+				// TODO: ptrs.push_back(new EToken());
+				parsed = true;
+			} else if ((c == EOF_TOKEN_DELIM) ||
+					   (c == EOF_DEFN_CLOSE)) {
+				pEToken tok;
+
+				if (!parsed) {
+					// try to interpret the type of buffer, we know it is either
+					// a shortstring or some literal value
+					if (caseInsensitiveEqual(buf, sTRUE)) {
+						// boolean true
+						ptrs.push_back(new EBoolean(true));
+						tokens.push_back(sTRUE);
+					} else if (caseInsensitiveEqual(buf, sFALSE)) {
+						// boolean false
+						ptrs.push_back(new EBoolean(false));
+						tokens.push_back(sFALSE);
+					} else if ((buf.length() == 1) && (buf.at(0) == EOF_NULL_CHAR)) {
+						// just push a NULL token, but don't push the string
+						ptrs.push_back(new EToken());
+					} else if ((tok = parseAsIso8601(buf)) != static_cast<pEToken>(0)) {
+						ptrs.push_back(tok);
+						tokens.push_back(buf);
+					} else if ((buf.length() > 3) &&
+							   (buf.at(0) == EOF_FIELD_OPEN) &&
+							   (buf.at(buf.length() - 1) == EOF_FIELD_CLOSE)) {
+						// field
+						tokens.push_back(buf);
+						ptrs.push_back(new EFieldToken);
+					} else {
+						pEToken vt;
+
+						// it is a literal, or a group of digits
+						// either a float, int, or bitfield value
+						if ((vt = isBitvalue(buf)) != static_cast<pEToken>(0)) {
+							ptrs.push_back(vt);
+
+							EBitField* bf = dynamic_cast<EBitField*>(vt);
+							if (bf) {
+								printf("bf := 0x%08x\n", bf->value());
+							}
+						} else if (verifyShortString(buf)) {
+							// id or enum - we will assume that the first shortstring
+							// is an id, and all the rest are enum values
+							if (!haveid) {
+								haveid = true;
+								ptrs.push_back(new EId(EShortString(buf)));
+							} else {
+								ptrs.push_back(new EEnum(EShortString(buf)));
+							}
+						} else {
+							vt = parseValue(buf);
+							ptrs.push_back(vt);
+
+							EValue* vp = dynamic_cast<EValue*>(vt);
+							if (vp) {
+								printf("val := %f\n", vp->value().asFloat());
+							}
+						}
+
+						tokens.push_back(buf);
+					}
+				}
+
+				buf.clear();
+				parsed = false;
+			} else {
+				buf += c;
+			}
+		}
+
+		for (int i = 0; i < tokens.size(); i++) {
+			if (ptrs[i]) {
+				printf("token[%02d] := %s (%s)\n", i, tokens[i].c_str(), EToken::TYPE_NAMES[ptrs[i]->type()].c_str());
+			} else {
+				printf("token[%02d] ignored\n", i, tokens[i].c_str());
+			}
+		}
 	}
 
 	void EParser::parseRoot()
@@ -855,6 +1363,7 @@ namespace sys {
 				if (cur) {
 					statements.push_back(cur);
 					printf("defn:=%s\n", cur->text().c_str());
+					parseTokens(cur->text());
 				}
 			}
 		}
@@ -869,71 +1378,266 @@ namespace sys {
 	pEToken EParser::parseAsIso8601(const std::string& token)
 	{
 		static const char *formats[] = {
-			"%Y",
-			"%Y-%m",
-			"%y-%m",
 			"%Y-%m-%d",
-			"%y-%m-%d",
-			"%Y%m%d",
-			"%y%m%d",
-			"%Y-%m-%d%T",
-			"%y-%m-%d%T",
+			"%Y-%m-%d%H:%M:%S",
 			"%Y%m%d%H%M%S",
-			"%y%m%d%H%M%S",
-			"%Y-%m-%dT%T",
-			"%y-%m-%dT%T",
-			"%Y-%m-%dT%TZ",
-			"%y-%m-%dT%TZ",
-			"%Y-%m-%d%TZ",
-			"%y-%m-%d%TZ",
-			"%Y%m%dT%TZ",
-			"%y%m%dT%TZ",
-			"%Y%m%d%TZ",
-			"%y%m%d%TZ"
+			"%Y-%m-%dT%H:%M:%S",
+			"%Y-%m-%d%H:%M:%SZ",
+			"%Y%m%d%H%M%SZ",
+			"%Y-%m-%dT%H:%M:%SZ",
 		};
 
 		static const int sFMT_LEN = sizeof(formats) / sizeof(char*);
 
 		time_t t;
 		bool converted = false;
-
+		
 		for (int i = 0; i < sFMT_LEN; i++) {
-#ifdef __EVOLVE_WIN32__
-			std::tm tmb;
-			std::istringstream ss(token);
-			ss >> std::get_time(&tmb, formats[i]);
-
-			if (!ss.fail()) {
-				tmb.tm_isdst = -1;
-				t = mktime(&tmb);
-				converted = true;
-			}
-#else
 			struct tm tmb;
 
-			if (strptime(token.c_str(), formats[i], &tmb) != NULL) {
+			const char *buf = token.c_str();
+			char *c = strptime(buf, formats[i], &tmb);
+
+			if ((c != NULL) && (*c == '\0')) {
 				tmb.tm_isdst = -1;
 				t = mktime(&tmb);
 				converted = true;
+
+//				printf("iso8601 := %s (%d, %d, %s, %ld)\n", token.c_str(), *c, i, formats[i], t);
+				break;
 			}
-#endif
 		}
 
-		return static_cast<pEToken>(0);
+		if (!converted) return static_cast<pEToken>(0);
+
+		return new ETime(t);
+	}
+
+	///////////////////////////////////////////////////////////////////////////
+
+	PEValue EParser::func_random_rand()
+	{
+		PEValue pg;
+		pg.fromInt(Rnd::random());
+
+		return pg;
+	}
+
+	PEValue EParser::func_random_rndn()
+	{
+		PEValue pg;
+		pg.fromFloat(Rnd::rndn());
+
+		return pg;
+	}
+
+	PEValue EParser::func_random_rndg()
+	{
+		PEValue pg;
+		pg.fromFloat(Rnd::rndg());
+
+		return pg;
+	}
+
+	PEValue EParser::func_random_range(EValue* a, EValue *b)
+	{
+		PEValue pg;
+
+		if ((a) && (b)) {
+			PEValue av = a->value();
+			PEValue bv = b->value();
+
+			// cue off of the 'a' value to determine integer vs float
+			if (av.t == PEValue::INTEGER) {
+				pg.fromInt(Rnd::between(av.asInt(), bv.asInt()));
+			} else {
+				pg.fromFloat(Rnd::betweenf(av.asFloat(), bv.asFloat()));
+			}
+		}
+
+		return pg;
+	}
+
+	PEValue EParser::func_random_roll(EValue* a, EValue *b)
+	{
+		PEValue pg;
+
+		if ((a) && (b)) {
+			PEValue av = a->value();
+			PEValue bv = b->value();
+
+			pg.fromInt(Rnd::ndx(av.asInt(), bv.asInt()));
+		}
+
+		return pg;
+	}
+
+	PEValue EParser::func_random_perlin(EValue *x)
+	{
+		PEValue pg;
+
+		if (x) {
+			PEValue xv = x->value();
+
+			pg.fromFloat(Rnd::perlin(xv.asFloat()));
+		}
+
+		return pg;
+	}
+
+	PEValue EParser::func_math_add(EValue* a, EValue *b)
+	{
+		PEValue pg;
+
+		if ((a) && (b)) {
+			PEValue av = a->value();
+			PEValue bv = b->value();
+
+			// cue off of the 'a' value to determine integer vs float
+			if (av.t == PEValue::INTEGER) {
+				pg.fromInt(av.asInt() + bv.asInt());
+			} else {
+				pg.fromFloat(av.asFloat() + bv.asFloat());
+			}
+		}
+
+		return pg;
+	}
+
+	PEValue EParser::func_math_mult(EValue* a, EValue *b)
+	{
+		PEValue pg;
+
+		if ((a) && (b)) {
+			PEValue av = a->value();
+			PEValue bv = b->value();
+
+			// cue off of the 'a' value to determine integer vs float
+			if (av.t == PEValue::INTEGER) {
+				pg.fromInt(av.asInt() * bv.asInt());
+			} else {
+				pg.fromFloat(av.asFloat() * bv.asFloat());
+			}
+		}
+
+		return pg;
+	}
+
+	PEValue EParser::func_math_div(EValue* a, EValue *b)
+	{
+		PEValue pg;
+
+		if ((a) && (b)) {
+			PEValue av = a->value();
+			PEValue bv = b->value();
+
+			if ((bv.u.i == 0) || (bv.u.f == 0.0f)) return pg;
+
+			// cue off of the 'a' value to determine integer vs float
+			if (av.t == PEValue::INTEGER) {
+				pg.fromInt(av.asInt() / bv.asInt());
+			} else {
+				pg.fromFloat(av.asFloat() / bv.asFloat());
+			}
+		}
+
+		return pg;
+	}
+
+	PEValue EParser::func_math_sub(EValue* a, EValue *b)
+	{
+		PEValue pg;
+
+		if ((a) && (b)) {
+			PEValue av = a->value();
+			PEValue bv = b->value();
+
+			// cue off of the 'a' value to determine integer vs float
+			if (av.t == PEValue::INTEGER) {
+				pg.fromInt(av.asInt() - bv.asInt());
+			} else {
+				pg.fromFloat(av.asFloat() - bv.asFloat());
+			}
+		}
+
+		return pg;
+	}
+
+	PEValue EParser::func_math_sin(EValue* x)
+	{
+		PEValue pg;
+
+		if (x) {
+			PEValue xv = x->value();
+
+			pg.fromFloat(sin(xv.asFloat()));
+		}
+
+		return pg;
+	}
+
+	PEValue EParser::func_math_cos(EValue* x)
+	{
+		PEValue pg;
+
+		if (x) {
+			PEValue xv = x->value();
+
+			pg.fromFloat(cos(xv.asFloat()));
+		}
+
+		return pg;
+	}
+
+	PEValue EParser::func_math_log(EValue* x)
+	{
+		PEValue pg;
+
+		if (x) {
+			PEValue xv = x->value();
+
+			pg.fromFloat(log10(xv.asFloat()));
+		}
+
+		return pg;
+	}
+
+	PEValue EParser::func_math_sqr(EValue* x)
+	{
+		PEValue pg;
+
+		if (x) {
+			PEValue xv = x->value();
+
+			if (xv.t == PEValue::INTEGER) {
+				int iv = xv.asInt();
+				pg.fromInt(iv * iv);
+			} else {
+				float fv = xv.asFloat();
+				pg.fromFloat(fv * fv);
+			}
+		}
+
+		return pg;
+	}
+
+	PEValue EParser::func_math_sqrt(EValue* x)
+	{
+		PEValue pg;
+
+		if (x) {
+			PEValue xv = x->value();
+
+			pg.fromFloat(sqrt(xv.asFloat()));
+		}
+
+		return pg;
 	}
 
 	///////////////////////////////////////////////////////////////////////////
 
 	void PETest()
 	{
-		EValueFuncNoArgs v1(func_random_rndg);
-		EValueFloat v2(EValueFloat::PI);
-
-		EValueFuncTwoArgs rb(func_math_mult, &v1, &v2);
-
-		printf("func_math_mult: %3.3f\n", rb.value().asFloat());
-
-
 		/////////////////////////
 		//
 		// chunks can be:
@@ -1023,7 +1727,7 @@ namespace sys {
 		//	 string,			value,			enum,		color,				color,			value
 
 
-		EParser p("data/lights.eof");
+		EParser p("data/test.eof");
 		p.parseRoot();
 	}
 

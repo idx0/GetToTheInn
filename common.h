@@ -4,7 +4,7 @@
 #include <assert.h>
 #include "libtcod/libtcod.hpp"
 
-#include "sys/thread_os.h"
+#include "sys/platform.h"
 #include "geometry.h"
 #include "delay.h"
 #include "color.h"

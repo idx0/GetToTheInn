@@ -12,7 +12,7 @@ logger::logger(const char *filename)
 {
 	m_defaultLevel = LOG_DEBUG;
 
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	fopen_s(&m_fp, filename, "w");
 #else
 	m_fp = fopen(filename, "w");
@@ -54,7 +54,7 @@ void logger::log(const char *fmt, ...)
 	char buf[256];
 
 	time(&t);
-#ifdef __EVOLVE_WIN32__
+#ifdef __PLATFORM_WIN32__
 	struct tm timeinfo;
 	localtime_s(&timeinfo, &t);
 	memset(buf, 0, 256);
