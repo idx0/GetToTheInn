@@ -20,10 +20,10 @@ namespace ui
 	void uithread::render(canvas* console)
 	{
 		if (sys::mutex_trylock(&m_mutex) == 0) {
-			std::list<widget*>::iterator it = m_widgets.begin();
+            console->console()->clear();
 
-			for (; it != m_widgets.end(); it++) {
-				(*it)->draw(console);
+			for (auto widget : m_widgets) {
+				widget->draw(console);
 			}
 
 			sys::mutex_unlock(&m_mutex);

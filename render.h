@@ -22,7 +22,7 @@ enum RenderMode
 class RenderThread : public sys::thread
 {
 public:
-	RenderThread(Context* ctx);
+	RenderThread(TileEngine *eng, Context* ctx);
 	~RenderThread();
 
 	void thread_func();
@@ -47,11 +47,11 @@ protected:
 protected:
 
 	RenderSettings *m_render;
-	TCODConsole* m_console;
+    Console* m_console;
 
 	ui::canvas* m_rootCanvas;
 
-	TCODConsole* m_cursor;
+    TileEngine *m_renderer;
 
 	Point m_mouse;
 	Key m_key;
@@ -61,6 +61,7 @@ protected:
 	Rect m_screen;
 	Point m_playerPos;
 	Tile m_playerTile;
+    Console *m_cursor;
 
 	RenderMode m_mode;
 

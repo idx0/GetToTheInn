@@ -4,7 +4,7 @@
 #include "common.h"
 #include "util.h"
 
-#include "libtcod/libtcod.hpp"
+#include "raylib.h"
 #include <queue>
 #include <unordered_map>
 #include <algorithm>

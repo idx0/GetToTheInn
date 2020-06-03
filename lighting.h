@@ -1,6 +1,6 @@
 #pragma once
 
-#include "libtcod/libtcod.hpp"
+#include "raylib.h"
 #include <vector>
 #include <set>
 
@@ -12,11 +12,11 @@
 class Light
 {
 public:
-	Light(int x, int y, float level, int rad, const Color& c = Color::white);
+	Light(int x, int y, float level, int rad, const gtti::Color& c = gtti::Color::white);
 	~Light();
 
 	Point position;
-	Color color;
+    gtti::Color color;
 
 	// the level of the light source
 	float lightLevel;

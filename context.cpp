@@ -2,10 +2,10 @@
 
 #include "sys/logger.h"
 
-Context::Context(Player *p) :
+Context::Context(Console *c, Player *p) :
 	m_player(p),
 	m_viewport(NULL),
-	m_console(NULL),
+	m_console(c),
 	m_grid(NULL),
 	m_render(NULL),
 	m_ready(false)
@@ -17,6 +17,7 @@ Context::~Context()
 {
 	sys::mutex_destroy(&m_mutex);
 
+    delete m_console;
 	reset();
 }
 
@@ -55,11 +56,24 @@ void Context::update()
 	m_ready = true;
 }
 
-void Context::place(Object* obj)
+bool Context::place(Object* obj)
 {
 	if (Utils::isValid(obj)) {
+        if (m_grid->at(obj->coords())->dynObj) {
+            delete m_grid->at(obj->coords())->dynObj;
+        }
 		m_grid->at(obj->coords())->dynObj = obj;
+        return true;
 	}
+
+    return false;
+}
+
+NamedObject* Context::pickup(const Point& pos)
+{
+    NamedObject *obj = dynamic_cast<NamedObject*>(m_grid->at(pos)->dynObj);
+    m_grid->at(pos)->dynObj = nullptr;
+    return obj;
 }
 
 void Context::lock()
@@ -77,8 +91,6 @@ void Context::reset()
 	delete m_viewport;
 	delete m_grid;
 	delete m_render;
-
-	delete m_console;
 }
 
 
@@ -91,42 +103,48 @@ void Context::initialize(Map* m)
 	reset();
 
 	m_grid = new ModelList<Grid>(m->width(), m->height());
-	m_console = new TCODConsole(window.width(), window.height());
-
 	m_render = new RenderSettings(m->width(), m->height());
 
 	// create viewport
 	m_viewport = new Viewport(container, window, 25,
 							  m_player->coords().x(), m_player->coords().y());
 
-	// set map related variables
-	for (int x = 0; x < m->width(); x++) {
-		for (int y = 0; y < m->height(); y++) {
-			Grid *g = m_grid->at(x, y);
+    updateMap(m);
+}
 
-			g->render = m_render->at(x, y);
+void Context::updateMap(Map *m)
+{
+    // set map related variables
+    for (int x = 0; x < m->width(); x++) {
+        for (int y = 0; y < m->height(); y++) {
+            Grid *g = m_grid->at(x, y);
 
-			// update map objects
-			g->mapObj = m->staticObject(x, y);
-			g->render->mobility = g->mapObj->mobilityModel();
-		}
-	}
+            g->render = m_render->at(x, y);
+
+            // update map objects
+            g->mapObj = m->staticObject(x, y);
+            g->render->mobility = g->mapObj->mobilityModel();
+        }
+    }
 }
 
 // if we can copy do so, otherwise return immediately
-void Context::trycopy(RenderSettings *render, Point* playerPos, Tile* playerTile)
+bool Context::trycopy(RenderSettings *render, Point* playerPos, Tile* playerTile)
 {
+    bool ret = false;
 	if (sys::mutex_trylock(&m_mutex) == 0) {
 		if (m_ready) {
-			render->copy(m_render, m_viewport->viewport());
+            render->copy(m_render, Rect(0, 0, m_render->height(), m_render->width()));// m_viewport->viewport());
 
 			*playerPos = m_player->coords() - m_viewport->viewport().topLeft();
 			*playerTile = m_player->tile();
 
 			m_ready = false;
+            ret = true;
 		}
 		sys::mutex_unlock(&m_mutex);
 	}
+    return ret;
 }
 
 
@@ -168,11 +186,10 @@ Cursor Context::cursor()
 
 void Context::updateCursor(const Point& pos, bool visible)
 {
-	Cursor cur;
-	cur.visible = visible;
-	cur.pos		= pos;
-
-	lock();
-	m_cursor = cur;
+    lock();
+    m_cursor.visible = visible;
+    if (visible) {
+        m_cursor.pos = pos;
+    }
 	unlock();
 }

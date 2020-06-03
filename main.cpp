@@ -7,41 +7,32 @@
 #include "sys/eventqueue.h"
 #include "sys/eof_parser.h"
 
-#include "libtcod/libtcod.hpp"
-
-#define TEST
+#include "TileEngine.h"
 
 int main(int argc, char **argv)
 {
-	sys::logger::createLogger("gtti.log");
-	sys::eventqueue::createEventQueue();
+    sys::logger::createLogger("gtti.log");
+    sys::eventqueue::createEventQueue();
 
-	Rnd::seed(time(NULL));
+    Rnd::seed(time(NULL));
 
 #ifndef TEST
-	Engine::init();
+    printf("EE: go!\n");
+
+    Engine::init();
 #else
-	sys::eof::PETest();
+    sys::eof::PETest();
 #endif
+    Engine::update(0);
 
-#ifndef TEST
-	while ((!Engine::quit()) && 
-		   (!TCODConsole::isWindowClosed())) {
-		Engine::checkForInput();
+    printf("EE: run!\n");
 
-		// render layers
-		//   -- 4: cursor      --
-		//   -- 3: gui         --
-		//   -- 2: map fx      --
-		//	 -- 2b: weather?   --
-		//   -- 1: map objects --
-		//	 -- 0: ground fx   --
-
-		//TCODConsole::flush();
-	}
+    while (!Engine::quit() && !WindowShouldClose()) {
+        Engine::checkForInput();
+        Engine::render();
+    }
 
 	Engine::final();
-#endif
 
 	return 0;
 }

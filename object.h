@@ -9,8 +9,8 @@
 class Object
 {
 public:
-	Object(const Point& pos, int icon, const Color& color);
-	Object(int x, int y, int icon, const Color& color);
+	Object(const Point& pos, int icon, const gtti::Color & color);
+	Object(int x, int y, int icon, const gtti::Color & color);
 	virtual ~Object();
 
 	virtual void update() {}
@@ -31,8 +31,8 @@ protected:
 
 	// Tile
 	int m_icon;
-	Color m_fgColor;
-	Color m_bgColor;
+    gtti::Color  m_fgColor;
+    gtti::Color  m_bgColor;
 
 	// lighting properties
 	LightingModel m_lightingModel;
@@ -52,6 +52,18 @@ private:
 
 typedef std::vector<Object*> ObjectMap;
 
+class NamedObject : public Object
+{
+public:
+    NamedObject(const std::string &name, const Point &pos, int icon, const gtti::Color &color) : Object(pos, icon, color), m_name(name) {}
+    NamedObject(const std::string &name, int x, int y, int icon, const gtti::Color &color) : Object(x, y, icon, color), m_name(name) {}
+    ~NamedObject() {}
+
+    const std::string& name() const { return m_name; }
+
+protected:
+    std::string m_name;
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -62,7 +74,7 @@ public:
 	~MagicTree();
 };
 
-class MagicShroom : public Object
+class MagicShroom : public NamedObject
 {
 public:
 	MagicShroom(const Point& p);

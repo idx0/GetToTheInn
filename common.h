@@ -2,14 +2,14 @@
 
 #include <vector>
 #include <assert.h>
-#include "libtcod/libtcod.hpp"
+#include "raylib.h"
 
 #include "sys/platform.h"
 #include "geometry.h"
 #include "delay.h"
 #include "color.h"
 
-#define THREADS
+//#define THREADS
 //#define USE_CURSOR
 
 #define STATUS_HEIGHT	3
@@ -31,27 +31,27 @@ class Tile
 {
 public:
 	Tile() :
-		fgColor(Color::black),
-		bgColor(Color::black),
+		fgColor(gtti::Color::black),
+		bgColor(gtti::Color::black),
 		icon(' ') {}
-	Tile(const Color& c, int i) :
+	Tile(const gtti::Color& c, int i) :
 		fgColor(c),
-		bgColor(Color::black),
+		bgColor(gtti::Color::black),
 		icon(i) {}
 	Tile(const Tile& rhs) { operator=(rhs); }
 
 	Tile& operator=(const Tile& rhs);
 
-	Color fgColor;
-	Color bgColor;
+    gtti::Color fgColor;
+    gtti::Color bgColor;
 	int icon;
 };
 
-class Model
+class BasicModel
 {
 public:
-	Model() {}
-	virtual ~Model() {}
+    BasicModel() {}
+	virtual ~BasicModel() {}
 
 	virtual void reset() = 0;
 };
@@ -66,7 +66,7 @@ enum MoibilityFlags
 };
 
 
-class MobilityModel : public Model
+class MobilityModel : public BasicModel
 {
 public:
 	MobilityModel() : flags(0) {}
@@ -97,7 +97,7 @@ enum DiscoveryFlags
 	D_ALREADY_KNOWN		= (D_EXPLORED | D_MAPPED | D_MAGIC_MAPPED),
 };
 
-class DiscoveryModel : public Model
+class DiscoveryModel : public BasicModel
 {
 public:
 	DiscoveryModel() : flags(0) {}
@@ -117,13 +117,14 @@ enum LightingFlags
 {
 	L_LIT				= B1(0),	// this tile was lit by the lighting engine
 	L_TRANSPARENT		= B1(1),	// light can shine through this tile
-	L_ALWAYS_LIT		= B1(2),	// this tile 's fg is always lit when visible
+	L_ALWAYS_LIT		= B1(2),	// this tile's fg is always lit when visible
 	L_IN_SHADOW			= B1(3),	// this tile is in shadow
 	L_ENSURE_CONTRAST	= B1(4),	// this tile's fg color should be adjusted when
 									// too close to the tile's bg color
+    L_EMITTER           = B1(5),    // this tile is a light emitter
 };
 
-class LightingModel : public Model
+class LightingModel : public BasicModel
 {
 public:
 	LightingModel() : flags(0) {}
@@ -131,8 +132,11 @@ public:
 
 	unsigned int flags;
 
-	Color ambientColor;
-	Color lightColor;
+    gtti::Color ambientColor;
+    gtti::Color lightColor;
+
+    unsigned int lightCount = 0;
+    float lightCoef = 0.0f;
 
 	void reset()
 	{
@@ -140,11 +144,13 @@ public:
 
 		flags &= ~RESET_BITS;
 		lightColor = ambientColor;
+        lightCoef = 0.0f;
+        lightCount = 0;
 	}
 };
 
 
-class TemperatureModel : public Model
+class TemperatureModel : public BasicModel
 {
 public:
 	TemperatureModel() : ambient(0), temp(0) {}

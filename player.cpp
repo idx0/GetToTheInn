@@ -9,7 +9,9 @@ void Player::apply_visible(void *map, int x, int y, int dx, int dy, void *src)
 	if ((g) && (g->inbounds(x, y))) {
 		g->at(x, y)->render->discover.flags |= D_SEEN;
 
-		if (g->get(x, y)->render->lighting.flags & L_LIT) {
+        unsigned int lf = g->get(x, y)->render->lighting.flags;
+
+		if ((lf & L_LIT) || (lf & L_ALWAYS_LIT)) {
 			// discovered!
 			g->at(x, y)->render->discover.flags |= D_EXPLORED;
 		} else {
@@ -20,11 +22,11 @@ void Player::apply_visible(void *map, int x, int y, int dx, int dy, void *src)
 
 
 Player::Player(int x, int y) :
-	Object(x, y, '@', TCODColor::white),
+	Object(x, y, '@', gtti::Color::white),
 	sight(28), hearing(20), light(14),
 	direction(FOV_EAST)
 {
-	m_light = new Light(x, y, 1.15f, Rnd::between(14,18), Color(255, 255, 171));
+	m_light = new Light(x, y, 1.15f, Rnd::between(14,18), gtti::Color(255, 255, 171));
 
 	fov_settings_init(&m_visionFOV);
 	fov_settings_set_opacity_test_function(&m_visionFOV, LightingEngine::opaque);
@@ -77,6 +79,26 @@ bool Player::move(int dx, int dy, const TheGrid* grid)
 	}
 
 	return false;
+}
+
+Point Player::inFrontOf() const
+{
+    int dx = 0, dy = 0;
+
+    switch (direction)
+    {
+    default:
+    case FOV_NORTH: dy--; break;
+    case FOV_SOUTH: dy++; break;
+    case FOV_WEST: dx--; break;
+    case FOV_EAST: dx++; break;
+    case FOV_NORTHWEST: dx--; dy--; break;
+    case FOV_SOUTHWEST: dx--; dy++; break;
+    case FOV_NORTHEAST: dx++; dy--; break;
+    case FOV_SOUTHEAST: dx++; dy++; break;
+    }
+
+    return Point(m_position.x() + dx, m_position.y() + dy);
 }
 
 void Player::update(TheGrid *grid)

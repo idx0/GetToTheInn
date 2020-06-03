@@ -99,9 +99,6 @@
     <ClCompile Include="sys\token.cpp">
       <Filter>Source Files\sys</Filter>
     </ClCompile>
-    <ClCompile Include="viewport.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="animation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -158,6 +155,18 @@
     </ClCompile>
     <ClCompile Include="sys\memory.cpp">
       <Filter>Source Files\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="TileEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="viewport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rnd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\uibox.cpp">
+      <Filter>Source Files\ui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -316,6 +325,15 @@
     </ClInclude>
     <ClInclude Include="sys\memory.h">
       <Filter>Header Files\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="raylib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TileEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\uibox.h">
+      <Filter>Header Files\ui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

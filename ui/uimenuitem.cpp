@@ -1,6 +1,5 @@
 #include "uimenuitem.h"
-
-#include "../libtcod/libtcod.hpp"
+#include "../TileEngine.h"
 
 namespace ui {
 
@@ -16,8 +15,8 @@ menuitem::menuitem(
 	memset(m_label, 0, MAX_MENUITEM_LENGTH);
 	memcpy(m_label, label, (len < MAX_MENUITEM_LENGTH ? len : MAX_MENUITEM_LENGTH));
 
-	int w, h;
-	TCODSystem::getCharSize(&w, &h);
+	int w = 10, h = 10;
+	//TCODSystem::getCharSize(&w, &h);
 
 	m_policy.setVerticalRule(policy::POLICY_FIXED);
 	m_policy.setVerticalSize(h);

@@ -546,7 +546,7 @@ namespace sys {
 	void EShortString::assign(const std::string& sz)
 	{
 		clear();
-		unsigned int len = std::min(sz.length(), EOF_SHORTSTRING_LEN);
+		unsigned int len = std::min(sz.length(), (size_t)EOF_SHORTSTRING_LEN);
 
 		for (unsigned int i = 0; i < len; i++) {
 			char c = sz.at(i);
@@ -559,7 +559,7 @@ namespace sys {
 	void EShortString::assign(const char* sz)
 	{
 		clear();
-		unsigned int len = std::min(strlen(sz), EOF_SHORTSTRING_LEN);
+		unsigned int len = std::min(strlen(sz), (size_t)EOF_SHORTSTRING_LEN);
 
 		for (unsigned int i = 0; i < len; i++) {
 			char c = sz[i];
@@ -1338,7 +1338,7 @@ namespace sys {
 			if (ptrs[i]) {
 				printf("token[%02d] := %s (%s)\n", i, tokens[i].c_str(), EToken::TYPE_NAMES[ptrs[i]->type()].c_str());
 			} else {
-				printf("token[%02d] ignored\n", i, tokens[i].c_str());
+				printf("token[%02d] ignored %s\n", i, tokens[i].c_str());
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "libtcod/libtcod.hpp"
+#include "raylib.h"
 
 #include "fov/fov.h"
 #include "common.h"
@@ -26,6 +26,8 @@ public:
 
 	// returns true if the player actually can move (and does)
 	bool move(int dx, int dy, const TheGrid* grid);
+
+    Point inFrontOf() const;
 
 	// player attributes (TODO)
 	int sight;

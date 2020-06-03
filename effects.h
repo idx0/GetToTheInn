@@ -6,7 +6,8 @@
 #include "animation.h"
 
 #include <list>
-#include "libtcod/libtcod.hpp"
+#include "raylib.h"
+#include "TileEngine.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -27,7 +28,7 @@ public:
 	Tile tile() const;
 
 protected:
-	TCODColor m_color;
+	gtti::Color m_color;
 	int m_icon;
 
 	PointF m_location;
@@ -66,7 +67,7 @@ public:
 	Emitter();
 
 	virtual void update() = 0;
-	virtual void render(TCODConsole* screen) = 0;
+	virtual void render(Console* screen) = 0;
 
 protected:
 
@@ -90,7 +91,7 @@ public:
 	~PointEmitter();
 
 	virtual void update();
-	virtual void render(TCODConsole* screen);
+	virtual void render(Console* screen);
 
 protected:
 	virtual void emit();
@@ -105,7 +106,7 @@ public:
 	~AmbientEmitter();
 
 	virtual void update();
-	virtual void render(TCODConsole* screen);
+	virtual void render(Console* screen);
 
 protected:
 

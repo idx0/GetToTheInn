@@ -20,6 +20,7 @@
 #include "context.h"
 #include "render.h"
 
+#include "TileEngine.h"
 
 enum InputMode
 {
@@ -77,6 +78,7 @@ public:
 
 	static void init();
 	static void final();
+    static void run();
 
 	static void checkForInput();
 	
@@ -88,12 +90,12 @@ public:
 	static void waitingMode();
 	static void restoreMode(const InputMode& m);
 
+    static void render();
+    static void update(int kc);
+
 protected:
 
 	void intiui();
-
-	void render();
-	void update(int kc);
 
 	void drawGround(int x, int y, bool visible, TemperatureModel* tm) const;
 
@@ -110,8 +112,8 @@ protected:
 
 protected:
 
-	static int handleKeyDown(const TCOD_key_t& key);
-	static int handleKeyUp(const TCOD_key_t& key);
+	static int handleKeyDown(int key);
+	static int handleKeyUp(int key);
 
 protected:
 	Map *m_map;
@@ -141,17 +143,10 @@ protected:
 	unsigned int m_renderFlags;
 
 	Context* m_context;
-
-	Emitter* m_emitter;
-	TCODConsole* m_mapEffects;
-
-	TCODConsole* m_groundEffects;
-	ConstantDelay *m_groundUpdate;
-
-	TCOD_key_t m_key;
-	TCOD_mouse_t m_mouse;
+    TileEngine *m_engine;
 
 	bool m_updateNeeded;
+    bool m_shownCursor = false;
 	bool m_quit;
 };
 

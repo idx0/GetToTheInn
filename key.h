@@ -1,6 +1,8 @@
 #pragma once
 
-#include "libtcod/console_types.h"
+#if 0
+
+#include "raylib.h"
 #include <string>
 #include <string.h>
 #include <ctype.h>
@@ -203,3 +205,7 @@ protected:
 
 	TCOD_key_t m_key;
 };
+
+#else
+typedef int Key;
+#endif // if 0

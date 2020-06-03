@@ -10,7 +10,7 @@
 
 #include "sys/thread.h"
 
-#include "libtcod/libtcod.hpp"
+#include "raylib.h"
 #include <string>
 
 struct Cursor
@@ -36,12 +36,13 @@ struct Cursor
 class Context
 {
 public:
-	Context(Player* p);
+	Context(Console *c, Player* p);
 	virtual ~Context();
 
 	virtual void update();
 
-	void place(Object* obj);
+	bool place(Object* obj);
+    NamedObject *pickup(const Point& pos);
 
 	// initializes the context based on the given map
 	void initialize(Map* m);
@@ -50,7 +51,7 @@ public:
 	void discover(int x, int y);
 
 	Viewport* viewport();
-	TCODConsole* console();
+	Console* console();
 
 	void lock();
 	void unlock();
@@ -58,12 +59,14 @@ public:
 	Cursor cursor();
 	void updateCursor(const Point& pos, bool visible = false);
 
+    void updateMap(Map *m);
+
 	ModelList<Grid>* grid();
 
 	Object* objAt(int x, int y);
 	Object* objAt(const Point& p);
 
-	void trycopy(RenderSettings *render, Point* playerPos, Tile* playerTile);
+	bool trycopy(RenderSettings *render, Point* playerPos, Tile* playerTile);
 
 protected:
 
@@ -74,7 +77,7 @@ protected:
 	Player* m_player;
 	Viewport* m_viewport;
 
-	TCODConsole* m_console;
+    Console* m_console;
 
 	TheGrid *m_grid;
 	RenderSettings *m_render;
@@ -98,7 +101,7 @@ ModelList<Grid>* Context::grid()
 
 
 inline
-TCODConsole* Context::console()
+Console* Context::console()
 {
 	return m_console;
 }

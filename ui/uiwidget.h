@@ -5,8 +5,8 @@
 #include "../geometry.h"
 #include "../key.h"
 #include "../common.h"
+#include "../TileEngine.h"
 
-#include "../libtcod/libtcod.hpp"
 #include <vector>
 #include <set>
 
@@ -16,21 +16,21 @@ namespace ui {
 class canvas
 {
 public:
-	explicit canvas(TCODConsole* console);
+	explicit canvas(Console* console);
 	virtual ~canvas();
 
-	virtual void draw(const Point& p, int c, const Color& fg, const Color& bg);
-	virtual void draw(const Point& p, int c, const Color& fg);
+	virtual void draw(const Point& p, int c, const gtti::Color& fg, const gtti::Color& bg);
+	virtual void draw(const Point& p, int c, const gtti::Color& fg);
 
-	virtual void drawText(const Rect& bounds, const std::string& sz, const Color& fg);
+	virtual void drawText(const Rect& bounds, const std::string& sz, const gtti::Color& fg);
 
-	TCODConsole* console() { return m_console; }
+    Console* console() { return m_console; }
 
 	canvas& operator=(const canvas& rhs);
 
 protected:
 
-	TCODConsole* m_console;
+    Console * m_console;
 };
 
 /* This class defines the sizing policy for a widget.

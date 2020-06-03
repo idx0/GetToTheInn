@@ -54,8 +54,11 @@ public:
 
 	Delay* copy() const;
 
-protected:
+    void restart(int nticks);
 
+    inline int timeout() const { return m_delay; }
+    inline int count() const { return m_count; }
+    float percent() const;
 	void reset();
 };
 

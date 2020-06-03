@@ -64,6 +64,22 @@ ConstantDelay::ConstantDelay(int nticks)
 void ConstantDelay::reset()
 {
 	m_count = 0;
+    m_ready = (m_delay == 0);
+}
+
+void ConstantDelay::restart(int nticks)
+{
+    m_delay = nticks;
+    reset();
+}
+
+float ConstantDelay::percent() const
+{
+    if (m_delay != 0.0f) {
+        return (float)m_count / (float)m_delay;
+    }
+
+    return 1.0f;
 }
 
 Delay* ConstantDelay::copy() const

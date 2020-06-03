@@ -10,20 +10,20 @@
 
 //#define FLORA
 
-Dirt::Dirt(int x, int y) : Object(x, y, ' ', Color::black)
+Dirt::Dirt(int x, int y) : Object(x, y, ' ', gtti::Color::black)
 {
 	static int icons[3] = { '.', 249, 250 };
 
 	//litColor	= TCODColor::lerp(TCODColor::darkSepia, TCODColor::desaturatedGreen, Rnd::rndn());
 	
 
-	TCODColor fg = TCODColor::lerp(TCODColor::darkSepia, TCODColor::desaturatedSea, Rnd::rndn());
+    gtti::Color fg = gtti::Color::lerp(gtti::Color(94, 75, 47), gtti::Color(63, 127, 95), Rnd::rndn());
 	fg.scaleHSV(Rnd::betweenf(0.6f, 1.0f), Rnd::betweenf(0.6f, 1.0f));
 
-	m_fgColor = Color(fg);
-	m_bgColor = Color(TCODColor::lerp(TCODColor(12, 8, 4), TCODColor(0, 8, 4), Rnd::rndn()));
+	m_fgColor = gtti::Color(fg);
+	m_bgColor = gtti::Color(gtti::Color::lerp(gtti::Color(12, 8, 4), gtti::Color(0, 8, 4), Rnd::rndn()));
 	
-	m_icon		= icons[Rnd::between(0, 3)];
+	m_icon = icons[Rnd::between(0, 3)];
 
 	m_mobilityModel.flags |= (M_WALKABLE | M_JUMPABLE | M_REACHABLE);
 	m_lightingModel.flags |= L_TRANSPARENT;
@@ -31,14 +31,14 @@ Dirt::Dirt(int x, int y) : Object(x, y, ' ', Color::black)
 	m_flavor = std::string("the ground");
 }
 
-Grass::Grass(const Point& p) : Object(p, ' ', Color::black)
+Grass::Grass(const Point& p) : Object(p, ' ', gtti::Color::black)
 {
 	static int icons[4] = { ',', '`', '\'', '"' };
 
-	m_fgColor = Color::lerp(Color(25, 31, 12), Color(25, 62, 12), Rnd::rndn());
-	m_bgColor = Color::lerp(Color(6, 6, 0), Color(0, 12, 0), Rnd::betweenf(0.3f, 0.6f));
+	m_fgColor = gtti::Color::lerp(gtti::Color(25, 31, 12), gtti::Color(25, 62, 12), Rnd::rndn());
+	m_bgColor = gtti::Color::lerp(gtti::Color(6, 6, 0), gtti::Color(0, 12, 0), Rnd::betweenf(0.3f, 0.6f));
 
-	m_icon		= icons[Rnd::between(0, 4)];
+	m_icon = icons[Rnd::between(0, 4)];
 
 	m_mobilityModel.flags |= (M_WALKABLE | M_JUMPABLE | M_REACHABLE);
 	m_lightingModel.flags |= L_TRANSPARENT;
@@ -48,28 +48,28 @@ Grass::Grass(const Point& p) : Object(p, ' ', Color::black)
 
 
 //Wall::Wall(int x, int y) : Object(x, y, '#', TCODColor::amber)
-Wall::Wall(int x, int y) : Object(x, y, '#', Color::lerp(Color::grey, Color::azure, 0.30f))
+Wall::Wall(int x, int y) : Object(x, y, '#', gtti::Color::lerp(gtti::Color::grey, gtti::Color::azure, 0.30f))
 {
-	m_bgColor = Color::lerp(Color(12, 12, 12), Color(0, 12, 24), 0.40f);
+	m_bgColor = gtti::Color::lerp(gtti::Color(12, 12, 12), gtti::Color(0, 12, 24), 0.40f);
 
 	m_flavor = std::string("a rough stone wall");
 }
 
-FloraWall::FloraWall(const Point& p) : Object(p, '#', Color(121, 110, 64))
+FloraWall::FloraWall(const Point& p) : Object(p, '#', gtti::Color(121, 110, 64))
 {
-	m_fgColor = Color::lerp(Color(35, 41, 22), Color(59, 77, 22), Rnd::rndn());
-	m_bgColor = Color::lerp(Color(6, 6, 0), Color(0, 12, 0), Rnd::betweenf(0.3f, 0.6f));
+	m_fgColor = gtti::Color::lerp(gtti::Color(35, 41, 22), gtti::Color(59, 77, 22), Rnd::rndn());
+	m_bgColor = gtti::Color::lerp(gtti::Color(6, 6, 0), gtti::Color(0, 12, 0), Rnd::betweenf(0.3f, 0.6f));
 
-	m_flavor = std::string("a dense overgrowth impedes your progress");
+	m_flavor = std::string("an overgrowth of roots, vines, and moss cover a stone wall");
 }
 
-Torch::Torch(int x, int y, int level, int rad) : Object(x, y, 'i', TCODColor::gold)
+Torch::Torch(int x, int y, int level, int rad) : NamedObject("torch", x, y, 'i', gtti::Color::gold)
 {
 	m_light = new Light(x, y, level, rad);
 
 	m_mobilityModel.flags |= (M_JUMPABLE | M_REACHABLE);
 
-	m_lightingModel.ambientColor = Color(96, 96, 96);
+	m_lightingModel.ambientColor = gtti::Color(96, 96, 96);
 	m_lightingModel.flags |= L_ALWAYS_LIT;
 }
 
@@ -221,7 +221,6 @@ bool Map::isWall(int x, int y) const
 	return false;
 }
 
-
 void Map::setWall(int x, int y, bool iswall)
 {
 	int i = x + y * m_width;
@@ -230,22 +229,51 @@ void Map::setWall(int x, int y, bool iswall)
 		delete m_staticObjects[i];
 
 		if (iswall) {
-#ifdef FLORA
-			m_staticObjects[i] = new FloraWall(Point(x, y));
-#else
 			m_staticObjects[i] = new Wall(x, y);
-#endif
 		} else {
-#ifdef FLORA
-			m_staticObjects[i] = new Grass(Point(x, y));
-#else
 			m_staticObjects[i] = new Dirt(x, y);
-#endif
 		}
 
 		MobilityModel *m = m_grid.list();
 		m[i] = m_staticObjects[i]->mobilityModel();
 	}
+}
+
+void Map::overgrow(int x, int y, int around)
+{
+    int i = x + y * m_width;
+    bool placed = false;
+
+    if (inbounds(x, y) && i < m_staticObjects.size()) {
+        Object *obj = m_staticObjects[i];
+
+        if (dynamic_cast<Wall*>(obj)) {
+            m_staticObjects[i] = new FloraWall(Point(x, y));
+            placed = true;
+            delete obj;
+        }
+        else if (dynamic_cast<Dirt*>(obj)) {
+            m_staticObjects[i] = new Grass(Point(x, y));
+            placed = true;
+            delete obj;
+        }
+
+        if (!placed) {
+            return;
+        }
+
+        MobilityModel *m = m_grid.list();
+        m[i] = m_staticObjects[i]->mobilityModel();
+
+        if (around > 1) {
+            around--;
+
+            overgrow(x, y + 1, around);
+            overgrow(x - 1, y, around);
+            overgrow(x + 1, y, around);
+            overgrow(x, y - 1, around);
+        }
+    }
 }
 
 int Map::width() const

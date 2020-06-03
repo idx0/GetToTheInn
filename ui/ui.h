@@ -9,3 +9,4 @@
 #include "uimenu.h"
 #include "uimenuitem.h"
 #include "uipanel.h"
+#include "uibox.h"

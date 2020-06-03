@@ -2,6 +2,7 @@
 
 #include "geometry.h"
 
+
 #define WINDOW_WIDTH	96
 #define WINDOW_HEIGHT	72
 

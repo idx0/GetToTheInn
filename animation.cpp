@@ -354,13 +354,13 @@ void Animation::setADSR(const ADSR& adsr)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-ColorAnimation::ColorAnimation(const Color& base, int lifetime, int repeat) :
+ColorAnimation::ColorAnimation(const gtti::Color& base, int lifetime, int repeat) :
 	Animation(lifetime, repeat),
 	m_color(base), m_type(A_COLOR_CONST), m_base(base)
 {
 }
 
-ColorAnimation::ColorAnimation(const Type& func, const Color& base, const Color& to,
+ColorAnimation::ColorAnimation(const Type& func, const gtti::Color& base, const gtti::Color& to,
 							   int lifetime, int repeat) :
 	Animation(lifetime, repeat),
 	m_color(base), m_type(func), m_base(base), m_to(to)
@@ -371,7 +371,7 @@ ColorAnimation::ColorAnimation(const Type& func, const Color& base, const Color&
 	}
 }
 
-ColorAnimation::ColorAnimation(const Type& func, const Color& base,
+ColorAnimation::ColorAnimation(const Type& func, const gtti::Color& base,
 							   int lifetime, int repeat) :
 	Animation(lifetime, repeat),
 	m_color(base), m_type(func), m_base(base)
@@ -382,7 +382,7 @@ ColorAnimation::ColorAnimation(const Type& func, const Color& base,
 	}
 }
 
-ColorAnimation::ColorAnimation(const Gradient& g, int lifetime, int repeat) :
+ColorAnimation::ColorAnimation(const gtti::Gradient& g, int lifetime, int repeat) :
 	Animation(lifetime, repeat),
 	m_gradient(g), m_type(A_COLOR_GRADIENT)
 {
@@ -403,18 +403,18 @@ void ColorAnimation::onTick()
 		m_color = m_gradient.getColor(r);
 		break;
 	case A_COLOR_LERP:
-		m_color = Color::lerp(m_base, m_to, r);
+		m_color = gtti::Color::lerp(m_base, m_to, r);
 		break;
 	case A_COLOR_FADE:
 		m_color = m_base * r;
 		break;
 	case A_COLOR_GREY:
-		m_color = Color::lerp(m_base, m_to, r);
+		m_color = gtti::Color::lerp(m_base, m_to, r);
 		break;
 	}
 }
 
-Color ColorAnimation::color() const
+gtti::Color ColorAnimation::color() const
 {
 	return m_color;
 }

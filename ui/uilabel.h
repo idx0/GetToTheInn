@@ -13,7 +13,7 @@ namespace ui {
 		virtual void draw(canvas *console);
 
 		void setLabel(const std::string& sz);
-		void setTextColor(const Color& c) { m_color = c; }
+		void setTextColor(const gtti::Color& c) { m_color = c; }
 		void setSize(const Rect &size);
 
 		std::string getText() const;
@@ -23,7 +23,7 @@ namespace ui {
 
 		std::string m_text;
 		Rect m_textRect;
-		Color m_color;
+        gtti::Color m_color;
 	};
 
 	inline

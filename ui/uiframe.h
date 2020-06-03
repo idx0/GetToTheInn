@@ -30,7 +30,7 @@ public:
 		frame_type type, widget *parent = NULL);
 	virtual ~frame(void);
 
-	void setColor(const Color& color);
+	void setColor(const gtti::Color& color);
 
 	virtual void draw(canvas *console);
 	virtual void drawChildren(canvas *console);
@@ -44,7 +44,7 @@ private:
 	frame_type m_frame_type;
 	char m_title[255];
 	unsigned int m_length;
-	Color m_color;
+    gtti::Color m_color;
 
 	Rect m_framerect;
 };

@@ -54,7 +54,7 @@ void frame::drawChildren(canvas *console)
 	}
 }
 
-void frame::setColor(const Color& color)
+void frame::setColor(const gtti::Color& color)
 {
 	m_color = color;
 }

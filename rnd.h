@@ -4,23 +4,56 @@
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
+#include <stdint.h>
 
 #include "libnoise/noise.h"
 
 #include "util.h"
 
 
+class mersenne_twister
+{
+    static const uint32_t _w;
+    static const uint32_t _d;
+
+    uint32_t _n, _m, _r;
+    uint32_t _a;
+    uint32_t _u;
+    uint32_t _s, _b;
+    uint32_t _t, _c;
+    uint32_t _l;
+    uint32_t _f;
+
+    uint32_t _index;
+    uint32_t _buf[624];
+
+public:
+    mersenne_twister();
+    mersenne_twister(uint32_t seed);
+    mersenne_twister(uint32_t n, uint32_t m, uint32_t r, uint32_t a, uint32_t u, uint32_t s,
+        uint32_t b, uint32_t t, uint32_t c, uint32_t l, uint32_t f, uint32_t seed);
+    virtual ~mersenne_twister() {}
+
+    virtual void seed(uint32_t s);
+    virtual uint32_t generate();
+
+protected:
+    virtual void initialize(uint32_t seed);
+    virtual void twist();
+};
+
 class Rnd : public Utils::Singleton<Rnd>
 {
 public:
-	static void seed(int s)
+	static void seed(uint32_t s)
 	{
 		srand(s);
 
 		getInstance()->m_perlin.SetSeed(s);
 		getInstance()->m_seed = s;
+        getInstance()->m_twister.seed(s);
 
-		printf("seed := %d\n", s);
+		printf("seed := %zu\n", s);
 	}
 
 	static double prng(int *seedptr)
@@ -30,7 +63,7 @@ public:
 
 	static double rndn()
 	{
-		return ((double)rand() / (double)RAND_MAX);
+		return ((double)getInstance()->m_twister.generate() / (double)0xffffffff);
 	}
 
 	static double perlin(double x, double y = 0.0, double z = 0.0)
@@ -38,9 +71,9 @@ public:
 		return getInstance()->m_perlin.GetValue(x, y, z);
 	};
 
-	static int random()
+	static uint32_t random()
 	{
-		return rand();
+		return getInstance()->m_twister.generate();
 	}
 
 	static double rndg()
@@ -103,8 +136,7 @@ public:
 	{
 		bool ret = false;
 
-		if ((m != 0) &&
-			(((double)rand() / RAND_MAX) <= ((double)n/(double)m))) {
+		if ((m != 0) && ((rndn()) <= ((double)n/(double)m))) {
 			ret = true;
 		}
 
@@ -129,8 +161,7 @@ public:
 
 	static double random_number(double inner, double outer)
 	{
-		unsigned long r = rand();
-		double rr = (double)r / ((double)RAND_MAX);
+		double rr = rndn();
 		double range = outer - inner;
 		return (rr * range + inner);
 	}
@@ -173,6 +204,7 @@ private:
 
 	noise::module::Perlin m_perlin;
 
-	int m_seed;
+	uint32_t m_seed;
+    mersenne_twister m_twister;
 
 };

@@ -1,8 +1,9 @@
 #include "uipanel.h"
+#include "../TileEngine.h"
 
 namespace ui {
 
-panel::panel(const Color& color, widget *parent)
+panel::panel(const gtti::Color& color, widget *parent)
 	: widget(parent),
 	  m_color(color),
 	  m_panel(NULL)
@@ -26,9 +27,8 @@ void panel::setSize(const Rect &size)
 {
 	widget::setSize(size);
 	
-	TCODConsole* nc = new TCODConsole(size.width(), size.height());
-	nc->setDefaultBackground(m_color.toTCOD());
-	nc->clear();
+    Console *nc = TileEngine::createConsole(size.width(), size.height());
+    nc->setBackgroundColor(gtti::Color::black);
 
 	delete m_panel.console();
 	m_panel = canvas(nc);
@@ -37,13 +37,12 @@ void panel::setSize(const Rect &size)
 void panel::draw(canvas* console)
 {
 	if (isVisible()) {
-		m_panel.console()->clear();
+        m_panel.console()->clear();
 
 		// draw children to the panel console
 		drawChildren(&m_panel);
 
-		// blit our panel to the main console
-		TCODConsole::blit(m_panel.console(), 0, 0, 0, 0, console->console(), m_size.left(), m_size.top());
+        console->console()->apply(m_panel.console(), m_size.left(), m_size.top());
 	}
 }
 

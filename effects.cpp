@@ -8,7 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 Particle::Particle(const Point& pos) :
-	m_color(TCODColor::black), m_icon(0),
+	m_color(gtti::Color::black), m_icon(0),
 	m_location((float)pos.x(), (float)pos.y()),
 	m_velocity(0.0f, 0.0f), m_force(0.0f, 0.0f),
 	m_dead(false)
@@ -100,7 +100,7 @@ void PointEmitter::emit()
 	}
 }
 
-void PointEmitter::render(TCODConsole* screen)
+void PointEmitter::render(Console* screen)
 {
 	ParticleList::iterator it = m_particles.begin();
 
@@ -110,10 +110,10 @@ void PointEmitter::render(TCODConsole* screen)
 		Tile t = (*it)->tile();
 
 		if (t.icon == 0) {
-			screen->setCharBackground((int)p.x(), (int)p.y(), t.fgColor.toTCOD());
+			screen->setCharBackground((int)p.x(), (int)p.y(), t.fgColor.toColor());
 		} else {
 			screen->setChar((int)p.x(), (int)p.y(), t.icon);
-			screen->setCharForeground((int)p.x(), (int)p.y(), t.fgColor.toTCOD());
+			screen->setCharForeground((int)p.x(), (int)p.y(), t.fgColor.toColor());
 		}
 		it++;
 	}
@@ -166,7 +166,7 @@ void AmbientEmitter::update()
 	}
 }
 
-void AmbientEmitter::render(TCODConsole* screen)
+void AmbientEmitter::render(Console* screen)
 {
 	ParticleList::iterator it = m_particles.begin();
 
@@ -176,10 +176,10 @@ void AmbientEmitter::render(TCODConsole* screen)
 		Tile t = (*it)->tile();
 
 		if (t.icon == 0) {
-			screen->setCharBackground((int)p.x(), (int)p.y(), t.fgColor.toTCOD());
+			screen->setCharBackground((int)p.x(), (int)p.y(), t.fgColor.toColor());
 		} else {
 			screen->setChar((int)p.x(), (int)p.y(), t.icon);
-			screen->setCharForeground((int)p.x(), (int)p.y(), t.fgColor.toTCOD());
+			screen->setCharForeground((int)p.x(), (int)p.y(), t.fgColor.toColor());
 		}
 		it++;
 	}
@@ -242,10 +242,10 @@ void LinearParticle::update()
 
 FlameParticle::FlameParticle(const Point& pos) :
 	LinearParticle(pos, FPS),
-	m_animation(Gradient(4, Color(61, 15, 0).packed(),
-							Color::flame.packed(),
-							Color::orange.packed(),
-							Color::yellow.packed()), FPS),
+	m_animation(gtti::Gradient(4, gtti::Color(61, 15, 0).packed(),
+        gtti::Color::flame.packed(),
+        gtti::Color::orange.packed(),
+        gtti::Color::yellow.packed()), FPS),
 	m_extent(8),
 	m_totalLife(FPS)
 {
@@ -269,12 +269,12 @@ void FlameParticle::update()
 	float var = burst * (1.0f - 2.0f * Rnd::rndn());
 	
 	if (m_extent) {
-		m_color = TCODColor::lerp(TCODColor::yellow, TCODColor::lighterYellow, std::min(1.0f, life / burst + var));
+		m_color = gtti::Color::lerp(gtti::Color::yellow, gtti::Color(255, 255, 127), std::min(1.0f, life / burst + var));
 		m_extent--;
 
 		Particle::update();
 	} else {
-		m_color = TCODColor::lerp(TCODColor::yellow, TCODColor::darkestFlame, std::min(1.0f, life + var));
+		m_color = gtti::Color::lerp(gtti::Color::yellow, gtti::Color(63, 15, 0), std::min(1.0f, life + var));
 	}
 
 	if (m_lifetime == 0) {
@@ -305,8 +305,8 @@ void AshParticle::update()
 		m_pos += PointF(rx, ry);
 
 		m_location = m_pos;
-		m_color = TCODColor::lerp(TCODColor::darkGrey, TCODColor::lightOrange,
-								  (float)m_lifetime / (float)m_lifespan);
+		m_color = gtti::Color::lerp(gtti::Color(95, 95, 95), gtti::Color(255, 159, 63),
+								    (float)m_lifetime / (float)m_lifespan);
 
 		m_lifetime--;
 	}

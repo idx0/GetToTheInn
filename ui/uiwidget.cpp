@@ -4,7 +4,7 @@
 
 namespace ui {
 
-canvas::canvas(TCODConsole* console) : m_console(console)
+canvas::canvas(Console* console) : m_console(console)
 {
 }
 
@@ -12,33 +12,35 @@ canvas::~canvas()
 {
 }
 
-void canvas::draw(const Point& p, int c, const Color& fg, const Color& bg)
+void canvas::draw(const Point& p, int c, const gtti::Color& fg, const gtti::Color& bg)
 {
 	m_console->setChar(p.x(), p.y(), c);
-	m_console->setCharForeground(p.x(), p.y(), fg.toTCOD());
-	m_console->setCharBackground(p.x(), p.y(), bg.toTCOD());
+	m_console->setCharForeground(p.x(), p.y(), fg.toColor());
+	m_console->setCharBackground(p.x(), p.y(), bg.toColor());
 }
 
-void canvas::draw(const Point& p, int c, const Color& fg)
+void canvas::draw(const Point& p, int c, const gtti::Color& fg)
 {
 	m_console->setChar(p.x(), p.y(), c);
-	m_console->setCharForeground(p.x(), p.y(), fg.toTCOD());
+	m_console->setCharForeground(p.x(), p.y(), fg.toColor());
 }
 
-void canvas::drawText(const Rect& bounds, const std::string& sz, const Color& fg)
+void canvas::drawText(const Rect& bounds, const std::string& sz, const gtti::Color& fg)
 {
 	int w = std::min(bounds.width(), (int)sz.length());
 	int i = 0, j = 0;
 	int cnt = 0;
 	
-	while (cnt < w) {
+	while (cnt < sz.length()) {
 		int c = sz[cnt];
 
-		if (c == '\n') {
+		if (c == '\n' || i >= w) {
 			j++;
 			i = 0;
 			if (j >= bounds.height()) break;
-		} else {
+		}
+
+        if (c != '\n') {
 			draw(Point(i + bounds.left(), bounds.top() + j), c, fg);
 			i++;
 		}

@@ -25,7 +25,10 @@ void LightingEngine::apply_light(void *map, int x, int y, int dx, int dy, void *
 		float dd = FSQR(l->radius);
 		float dr = std::min(dd, FSQR(dx) + FSQR(dy));
 		float coef = (1 - (dr / dd));
+        unsigned int n = g->at(x, y)->render->lighting.lightCount;
 
+        g->at(x, y)->render->lighting.lightCoef = (coef + n * g->at(x, y)->render->lighting.lightCoef) / (n + 1);
+        g->at(x, y)->render->lighting.lightCount++;
 		g->at(x, y)->render->lighting.lightColor += l->color * coef * l->lightLevel;
 
 		if (coef > 0) {
@@ -47,7 +50,7 @@ int LightingEngine::opaque(void *map, int x, int y)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Light::Light(int x, int y, float level, int rad, const Color& c) :
+Light::Light(int x, int y, float level, int rad, const gtti::Color& c) :
 	position(Point(x, y)),
 	color(c),
 	lightLevel(level),
@@ -87,6 +90,10 @@ void Light::calculateLighting(TheGrid* grid)
 				   position.y(),
 				   radius);
 	}
+
+    // mark ourself as lit
+    grid->at(position)->render->lighting.flags |= L_EMITTER;
+    grid->at(position)->render->lighting.lightColor += color * lightLevel;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

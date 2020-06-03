@@ -202,15 +202,15 @@ public:
 	};
 
 public:
-	ColorAnimation(const Color& base, int lifetime, int repeat = FOREVER);
-	ColorAnimation(const Type& func, const Color& base, const Color& to,
+	ColorAnimation(const gtti::Color& base, int lifetime, int repeat = FOREVER);
+	ColorAnimation(const Type& func, const gtti::Color& base, const gtti::Color& to,
 				   int lifetime, int repeat = FOREVER);
-	ColorAnimation(const Gradient& g, int lifetime, int repeat = FOREVER);
-	ColorAnimation(const Type& func, const Color& base,
+	ColorAnimation(const gtti::Gradient& g, int lifetime, int repeat = FOREVER);
+	ColorAnimation(const Type& func, const gtti::Color& base,
 				   int lifetime, int repeat = FOREVER);
 	virtual ~ColorAnimation();
 
-	Color color() const;
+    gtti::Color color() const;
 
 protected:
 
@@ -218,12 +218,12 @@ protected:
 
 protected:
 
-	Color m_color;
-	Gradient m_gradient;
+    gtti::Color m_color;
+	gtti::Gradient m_gradient;
 
 	Type m_type;
-	Color m_base;
-	Color m_to;
+    gtti::Color m_base;
+    gtti::Color m_to;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -235,8 +235,8 @@ public:
 	{
 		LightingModel	lighting;
 		bool			needsRender;
-		Color			fg;
-		Color			bg;
+        gtti::Color		fg;
+        gtti::Color		bg;
 		int				icon;
 	};
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "libtcod/libtcod.hpp"
+#include "raylib.h"
 
 #include "geometry.h"
 #include "fov/fov.h"
@@ -43,7 +43,7 @@ public:
 };
 
 
-class Torch : public Object
+class Torch : public NamedObject
 {
 public:
 	Torch(int x, int y, int level, int rad);
@@ -75,6 +75,8 @@ public:
 
 	Tile tile(int x, int y);
 	Object* staticObject(int x, int y);
+
+    void overgrow(int x, int y, int around = 1);
 
 	const MobilityList* staticCopy();
 

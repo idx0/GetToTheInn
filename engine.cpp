@@ -7,7 +7,7 @@
 #include "sys/eventqueue.h"
 #include "sys/logger.h"
 
-#include "libtcod/libtcod.hpp"
+#include "raylib.h"
 #include <sstream>
 
 struct _mouse
@@ -132,6 +132,7 @@ void UpdateThread::update()
 	// unlock the context
 	m_context->unlock();
 #endif
+    printf("EE: updated\n");
 }
 
 void UpdateThread::done(bool d)
@@ -157,31 +158,22 @@ bool UpdateThread::isDone()
 Engine *Engine::e = static_cast<Engine*>(0);
 
 Engine::Engine() :
-	m_mode(MODE_MOVE),
+    m_mode(MODE_MOVE),
 	m_updateNeeded(true), m_quit(false)
 {
-	TCODConsole::setCustomFont("font.png", TCOD_FONT_LAYOUT_ASCII_INROW);
-//	TCODConsole::setCustomFont("font8x8-thin.png", TCOD_FONT_LAYOUT_ASCII_INROW);
-	TCODConsole::initRoot(WINDOW_WIDTH, WINDOW_HEIGHT + STATUS_HEIGHT, "GttI", false);
-
-	TCODConsole::mapAsciiCodesToFont(0, 255, 0, 0);
-//	TCODConsole::setKeyboardRepeat(0, 0);
-
-	TCODSystem::setFps(FPS);
+    printf("EE: begin!\n");
 }
 
 void Engine::init()
 {
 	e = getInstance();
 
+    printf("EE: creating TileEngine...\n");
+    e->m_engine = new TileEngine("ascii.png", 10, 10, WINDOW_WIDTH, WINDOW_HEIGHT + STATUS_HEIGHT);
+    printf("EE: done.\n");
+
 	// init game stuff
 	e->m_map = new Map(MAP_WIDTH, MAP_HEIGHT);
-
-	e->m_groundEffects = new TCODConsole(WINDOW_WIDTH, WINDOW_HEIGHT);
-	e->m_groundUpdate = new ConstantDelay(30);
-
-	e->m_mapEffects = new TCODConsole(WINDOW_WIDTH, WINDOW_HEIGHT);
-	e->m_emitter = NULL;
 
 	// generate the map
 	e->m_map->generateMap();
@@ -191,19 +183,28 @@ void Engine::init()
 	e->m_player = new Player(p.x(), p.y());
 
 	// create context;
-	e->m_context = new Context(e->m_player);
+	e->m_context = new Context(e->m_engine->mainConsole(), e->m_player);
 	e->m_context->initialize(e->m_map);
+
+    printf("EE: Initialied console %p\n", e->m_engine->mainConsole());
 
 	// place objects
 //	e->m_context->place(new PhantomWall(41, 22));
-	e->m_context->place(new MagicTree(e->m_map->findFree(4)));
+    MagicTree *tree = new MagicTree(e->m_map->findFree(4));
+    e->m_map->overgrow(tree->coords().x(), tree->coords().y(), 12);
+	e->m_context->place(tree);
 
 	for (int i = 0; i < 10; i++) {
-		e->m_context->place(new MagicShroom(e->m_map->findFree(3)));
+        MagicShroom *shroom = new MagicShroom(e->m_map->findFree(3));
+        e->m_map->overgrow(shroom->coords().x(), shroom->coords().y(), 4);
+        e->m_context->place(shroom);
 	}
 
+    e->m_context->updateMap(e->m_map);
+    e->m_player->update(e->m_context->grid());
+
 	e->m_updateThread = new UpdateThread(e->m_context, e->m_player);
-	e->m_renderThread = new RenderThread(e->m_context);
+	e->m_renderThread = new RenderThread(e->m_engine, e->m_context);
 	e->m_uiThread = new ui::uithread();
 
 	// create some UI stuff
@@ -220,22 +221,26 @@ void Engine::init()
 	UpdateThread::ev_update(e->m_updateThread, data);
 
 	// create render thread
-	e->m_renderThread->create_thread();
+    e->m_renderThread->create_thread();
 #endif
 }
 
+void Engine::run()
+{
+    e->m_engine->run();
+}
 
 void Engine::intiui()
 {
 	Size s = m_context->viewport()->viewport().size();
 	int ptop = s.height();
 
-	ui::panel* p0 = new ui::panel(Color(32,32,32));
+	ui::panel* p0 = new ui::panel(gtti::Color(32,32,32));
 	e->m_modeLabel = new ui::label("-- waiting --");
 
-	ui::panel* p1 = new ui::panel(Color(32,32,32));
+	ui::panel* p1 = new ui::panel(gtti::Color(32,32,32));
 	m_flavorLabel = new ui::label("");
-	m_flavorLabel->setTextColor(Color::grey);
+	m_flavorLabel->setTextColor(gtti::Color::grey);
 
 	p0->setSize(Rect(ptop, 0, ptop + 1, s.width()));
 	p0->addChild(e->m_modeLabel);
@@ -251,14 +256,18 @@ void Engine::intiui()
 	m_messageWindow->setSize(Rect(52, 4, 68, 49));	// poisiton 3
 
 	ui::frame *frame = new ui::frame(ui::FRAME_TYPE_THIN);
-	frame->setColor(Color::white);
+	frame->setColor(gtti::Color(208, 208, 208));
 	frame->addChild(m_messageLabel);
 
 	m_messageWindow->addChild(frame);
 	m_messageWindow->hide();
 
-	m_uiThread->own(p0);
-	m_uiThread->own(p1);
+    ui::vbox *b = new ui::vbox(Rect(ptop, 0, ptop + STATUS_HEIGHT, s.width()));
+    b->addChild(new ui::block(196, gtti::Color(208, 208, 208), Rect(0, 0, Size(s.width(), 1))));
+    b->addChild(p0);
+    b->addChild(p1);
+
+    m_uiThread->own(b);
 	m_uiThread->own(m_messageWindow);
 }
 
@@ -275,14 +284,11 @@ void Engine::final()
 
 Engine::~Engine()
 {
+    printf("EE: end!\n");
+    delete m_engine;
 	delete m_map;
 	delete m_player;
 	delete m_context;
-
-	delete m_groundEffects;
-	delete m_mapEffects;
-
-	delete m_groundUpdate;
 }
 
 bool Engine::quit()
@@ -307,31 +313,25 @@ void Engine::drawGround(int x, int y, bool visible, TemperatureModel* tm) const
 	bool cold = (tm->temp < 0);
 	int abs_temp = abs(tm->temp);
 
-	TCODColor bg = TCODColor::black;
+	gtti::Color bg = gtti::Color::black;
 
 	static float r = Rnd::rndn();
 
-	m_groundUpdate->tick();
-
-	if (!m_groundUpdate->delay()) {
-		r = Rnd::rndn();
-	}
-
 	if (cold) {
 		if (abs_temp >= 7) {
-			bg = TCODColor::lerp(TCODColor::darkerAzure, TCODColor::darkestAzure, r);
+			bg = gtti::Color::lerp(gtti::Color(0, 63, 127), gtti::Color(0, 31, 63), r);
 		} else if (abs_temp >= 4) {
-			bg = TCODColor::lerp(TCODColor::darkerSky, TCODColor::darkestSky, r);
+			bg = gtti::Color::lerp(gtti::Color(0, 95, 127), gtti::Color(0, 47, 63), r);
 		}
 	} else {
 		if (abs_temp >= 7) {
-			bg = TCODColor::lerp(TCODColor::darkerFlame, TCODColor::darkestFlame, r);
+			bg = gtti::Color::lerp(gtti::Color(127, 31, 0), gtti::Color(63, 15, 0), r);
 		} else if (abs_temp >= 4) {
-			bg = TCODColor::lerp(TCODColor::darkerOrange, TCODColor::darkestOrange, r);
+			bg = gtti::Color::lerp(gtti::Color(127, 63, 0), gtti::Color(63, 31, 0), r);
 		}
 	}
 
-	m_groundEffects->setCharBackground(x, y, bg);
+//	m_groundEffects->setCharBackground(x, y, bg);
 }
 
 // Bresenham's line algorithm
@@ -345,7 +345,7 @@ void Engine::drawLine(const Point& p0, const Point& p1)
 
 	for (;;) {
 		// draw(x, y);
-		m_mapEffects->setCharBackground(x, y, TCODColor::magenta);
+//		m_mapEffects->setCharBackground(x, y, TCODColor::magenta);
 
 		if (!(m_context->grid()->get(x, y)->render->mobility.flags & M_WALKABLE)) break;
 		if ((x == p1.x()) && (y == p1.y())) break;
@@ -362,10 +362,10 @@ void Engine::drawCircle(const Point& o, int r)
 	int x = -r, y = 0, err = 2 - 2 * r;
 
 	do {
-		m_mapEffects->setCharBackground(o.x() - x, o.y() + y, TCODColor::purple);
-		m_mapEffects->setCharBackground(o.x() - y, o.y() - x, TCODColor::purple);
-		m_mapEffects->setCharBackground(o.x() + x, o.y() - y, TCODColor::purple);
-		m_mapEffects->setCharBackground(o.x() + y, o.y() + x, TCODColor::purple);
+//		m_mapEffects->setCharBackground(o.x() - x, o.y() + y, TCODColor::purple);
+//		m_mapEffects->setCharBackground(o.x() - y, o.y() - x, TCODColor::purple);
+//		m_mapEffects->setCharBackground(o.x() + x, o.y() - y, TCODColor::purple);
+//		m_mapEffects->setCharBackground(o.x() + y, o.y() + x, TCODColor::purple);
 
 		r = err;
 		if (r <= y) err += ++y * 2 + 1;
@@ -375,6 +375,7 @@ void Engine::drawCircle(const Point& o, int r)
 
 void Engine::render()
 {
+#if 0
 	sys::event_payload pl;
 
 	pl.ptr = NULL;
@@ -382,20 +383,27 @@ void Engine::render()
 
 	// push a render event
 	sys::eventqueue::push(sys::event(sys::EVENT_RENDER, pl));
+#else
+    RenderThread::ev_render(e->m_renderThread, sys::TOKEN_NONE);
+#endif
 }
 
 
 void Engine::update(int kc)
 {
+
 	sys::event_payload pl;
 
 //	pl.ptr = // TODO key input
 	pl.data.param1 = (unsigned short)kc;
 
 //	sys::logger::log("update triggered via %d", kc);
-
+#if 0
 	// push a render event
 	sys::eventqueue::push(sys::event(sys::EVENT_UPDATE, pl));
+#else
+    UpdateThread::ev_update(e->m_updateThread, pl.data);
+#endif
 }
 
 void Engine::waitingMode()
@@ -440,8 +448,9 @@ bool Engine::modeNeedsCursor(const InputMode& m) const
 
 void Engine::checkForInput()
 {
+    int kc = NNEIGHBORS;
+#if 0
 	static const int FREQ = (1000 / FPS) + 1;
-	int kc = NNEIGHBORS;
 
 	TCOD_event_t ev = TCODSystem::checkForEvent(TCOD_EVENT_ANY, &e->m_key, &e->m_mouse);
 
@@ -458,44 +467,55 @@ void Engine::checkForInput()
 
 		sys::eventqueue::push(sys::event(sys::EVENT_MOUSE_MOVE, p));
 	}
+#endif
 
 	Cursor c = e->m_context->cursor();
 
 	bool vis = c.visible;
-	mp = c.pos;
+	Point mp = c.pos;
 
-	// does this mode require a cursor, and is the cursor one the map?
+	// does this mode require a cursor, and is the cursor on the map?
 	if ((e->modeNeedsCursor(e->m_mode)) &&
 		(e->m_context->viewport()->viewport().inbounds(mp))) {
-		if (!vis) {	mp = e->m_player->coords(); }
-
+        if (!e->m_shownCursor) {
+            mp = e->m_player->coords();
+            e->m_shownCursor = true;
+        }
 		vis = true;
-	}
+    } else {
+        vis = false;
+    }
 
-	if (kc != NNEIGHBORS) {
-		if (e->m_mode == MODE_MOVE) {
-			sys::event_payload pl;
+    int k = GetKeyPressed();
+    kc = handleKeyDown(k);
 
-	//		pl.ptr = // TODO key input
-			pl.data.param1 = (unsigned short)kc;
-			pl.data.flags = A_MOVE;
+    if (kc != NNEIGHBORS) {
+        if (e->m_mode == MODE_MOVE) {
+            sys::event_payload pl;
 
-	//		sys::logger::log("update triggered via %d", kc);
+            //		pl.ptr = // TODO key input
+            pl.data.param1 = (unsigned short)kc;
+            pl.data.flags = A_MOVE;
 
-			// push an update event
-			sys::eventqueue::push(sys::event(sys::EVENT_ACTION, pl));
-		} else if (vis) {
-			Point mv(NEIGHBORS[kc].dx, NEIGHBORS[kc].dy);
+            //		sys::logger::log("update triggered via %d", kc);
 
-			if (e->m_key.shift) {
-				mv *= 10;
-			}
+                    // push an update event
+            //sys::eventqueue::push(sys::event(sys::EVENT_ACTION, pl));
+            UpdateThread::ev_action(e->m_updateThread, pl.data);
+        } else if (vis) {
+            Point mv(NEIGHBORS[kc].dx, NEIGHBORS[kc].dy);
 
-			if (e->m_context->viewport()->viewport().inbounds(mp + mv)) {
-				mp += mv;
-			}
-		}
-	}
+            if (IsKeyPressed(KEY_LEFT_SHIFT) || IsKeyPressed(KEY_RIGHT_SHIFT)) {
+                mv *= 10;
+            }
+
+            if (e->m_context->viewport()->viewport().inbounds(mp + mv)) {
+                mp += mv;
+            }
+        }
+	} else if (k == 'z') {
+        mp = e->m_player->coords();
+    }
 
 	if (vis) {
 		// describe the object at the current cursor position
@@ -513,50 +533,57 @@ void Engine::checkForInput()
 
 	e->m_context->updateCursor(mp, vis);
 
+#if 0
 	TCODSystem::sleepMilli(FREQ);
 
 	// this call seems to smooth things out, but im worried about FPS limiting
 	// my guess is this works because it forces the renderer to redraw after every event
 	// but we would rather let the render thread handle this
 //	TCODConsole::flush();
+#endif
 }
 
 
-int Engine::handleKeyDown(const TCOD_key_t& key)
+int Engine::handleKeyDown(int key)
 {
+
 	int kc = NNEIGHBORS;
 	static int windowPos = 0;
+    bool needsUpdate = false;
 
+#if 0
 	if (key.pressed == 0) return kc;
 
 	switch (key.vk) {
-		case TCODK_ESCAPE:
+#endif
+
+    if (key) printf("key pressed %d\n", key);
+
+    switch ((KeyboardKey)key) {
+		case KEY_ESCAPE:
+        case 'q':
 			e->m_quit = true;
 			break;
-		case TCODK_CHAR:
+		case 'i':
 		{
-			Key k(key);
+			int px = e->m_player->coords().x();
+			int py = e->m_player->coords().y();
 
-			if (k.isKey('i')) {
-				int px = e->m_player->coords().x();
-				int py = e->m_player->coords().y();
-
-				for (int n = 0; n < NNEIGHBORS; n++) {
-					Object *obj = e->m_context->objAt(NEIGHBORS[n].dx + px, NEIGHBORS[n].dy + py);
-					obj->interact();
-				}
-			} else if (k.isKey('e')) {
-//				delete m_emitter;
-//				m_emitter = new Emitter(_ms.p);
-			} else if (k.isKey('x')) {
-				e->m_uiThread->lock();
-				e->m_modeLabel->setLabel("INSPECT");
-				e->m_uiThread->unlock();
-				e->m_mode = MODE_COMBAT;
+			for (int n = 0; n < NNEIGHBORS; n++) {
+				Object *obj = e->m_context->objAt(NEIGHBORS[n].dx + px, NEIGHBORS[n].dy + py);
+				obj->interact();
 			}
+            break;
+		}
+        case 'x':
+        {
+			e->m_uiThread->lock();
+			e->m_modeLabel->setLabel("INSPECT");
+			e->m_uiThread->unlock();
+			e->m_mode = MODE_COMBAT;
 			break;
 		}
-		case TCODK_SPACE:
+		case KEY_SPACE:
 		{
 			InputMode nmode = e->m_mode;
 
@@ -577,7 +604,46 @@ int Engine::handleKeyDown(const TCOD_key_t& key)
 
 			break;
 		}
-		case TCODK_TAB:
+        case 't':
+        {
+            Torch *t = new Torch(e->m_player->coords().x(), e->m_player->coords().y(), 3, 5);
+            if (!e->m_context->place(t)) {
+                delete t;
+            } else {
+                needsUpdate = true;
+            }
+            break;
+        }
+        case 'e':
+        {
+            NamedObject *obj = e->m_context->pickup(Point(e->m_player->coords().x(), e->m_player->coords().y()));
+            if (!obj) {
+                obj = e->m_context->pickup(e->m_player->inFrontOf());
+            }
+
+            if (obj) {
+                e->m_flavorLabel->setLabel("You picked up a " + obj->name());
+                if (dynamic_cast<MagicShroom*>(obj)) {
+                    e->m_engine->mainConsole()->setFilter(new PsychedlicFilter());
+                }
+                delete obj;
+                needsUpdate = true;
+            } else {
+                e->m_flavorLabel->setLabel("There is nothing to be picked up!");
+            }
+            break;
+        }
+        case 'f':
+            e->m_engine->mainConsole()->setFilter(new FadeFilter(0.1f, 0.0f, 0.5f, gtti::Color::white));
+            break;
+        case 'k':
+            e->m_engine->mainConsole()->setFilter(new FadeFilter(0.05f, 0.0f, 0.2f, gtti::Color(255, 96, 96)));
+            break;
+        case 'l':
+            e->m_engine->mainConsole()->setFilter(new ThunderstormFilter());
+            break;
+		case KEY_TAB:
+        case 'm':
 		{
 			windowPos = (windowPos + 1) % 4;
 
@@ -598,46 +664,80 @@ int Engine::handleKeyDown(const TCOD_key_t& key)
 			e->m_uiThread->unlock();
 			break;
 		}
+#if 0
 		case TCODK_PRINTSCREEN:
 			TCODSystem::saveScreenshot(NULL);
 			break;
-		case TCODK_KP8:
-		case TCODK_UP:
+#endif
+		case KEY_KP_8:
+		case KEY_UP:
+        case KEY_W:
+        case 'w':
 			kc = NORTH;
 			break;
-		case TCODK_KP7:
+		case KEY_KP_7:
 			kc = NORTHWEST;
 			break;
-		case TCODK_KP9:
+		case KEY_KP_9:
 			kc = NORTHEAST;
 			break;
-		case TCODK_KP2:
-		case TCODK_DOWN:
+		case KEY_KP_2:
+		case KEY_DOWN:
+        case KEY_S:
+        case 's':
 			kc = SOUTH;
 			break;
-		case TCODK_KP1:
+		case KEY_KP_1:
 			kc = SOUTHWEST;
 			break;
-		case TCODK_KP3:
+		case KEY_KP_3:
 			kc = SOUTHEAST;
 			break;
-		case TCODK_KP4:
-		case TCODK_LEFT:
+		case KEY_KP_4:
+		case KEY_LEFT:
+        case KEY_A:
+        case 'a':
 			kc = WEST;
 			break;
-		case TCODK_KP6:
-		case TCODK_RIGHT:
+		case KEY_KP_6:
+		case KEY_RIGHT:
+        case KEY_D:
+        case 'd':
 			kc = EAST;
 			break;
 		default: break;
 	}
 
+#if 0
+    if (IsKeyDown(KEY_KP_8) || IsKeyDown(KEY_UP)) {
+        kc = NORTH;
+    } else if (IsKeyDown(KEY_KP_2) || IsKeyDown(KEY_DOWN)) {
+        kc = SOUTH;
+    } else if (IsKeyDown(KEY_KP_4) || IsKeyDown(KEY_LEFT)) {
+        kc = WEST;
+    } else if (IsKeyDown(KEY_KP_6) || IsKeyDown(KEY_RIGHT)) {
+        kc = EAST;
+    } else if (IsKeyDown(KEY_KP_1)) {
+        kc = SOUTHWEST;
+    } else if (IsKeyDown(KEY_KP_3)) {
+        kc = SOUTHEAST;
+    } else if (IsKeyDown(KEY_KP_9)) {
+        kc = NORTHEAST;
+    } else if (IsKeyDown(KEY_KP_7)) {
+        kc = NORTHWEST;
+    }
+#endif
+
 //	sys::logger::log("key_down := %s", Key(key).toString().c_str());
+
+    if (needsUpdate) {
+        UpdateThread::ev_update(e->m_updateThread, sys::event_payload::_data{});
+    }
 
 	return kc;
 }
 
-int Engine::handleKeyUp(const TCOD_key_t& key)
+int Engine::handleKeyUp(int key)
 {
 	return 0;
 }

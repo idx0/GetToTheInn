@@ -9,7 +9,7 @@ namespace ui {
 	label::label(const std::string& sz, widget *parent) :
 		widget(parent),
 		m_text(sz),
-		m_color(Color::white)
+		m_color(gtti::Color::white)
 	{
 	}
 
